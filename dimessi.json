@@ -1,0 +1,26 @@
+[
+  {
+    "nome": "Martina",
+    "cognome": "tutu",
+    "data_nascita": "01/01/1980",
+    "data_ricovero": "28/09/2025"
+  },
+  {
+    "nome": "mammame",
+    "cognome": "avast",
+    "data_nascita": "09/01/1980",
+    "data_ricovero": "28/09/2025"
+  },
+  {
+    "nome": "sperom",
+    "cognome": "sperim",
+    "data_nascita": "11/04/1980",
+    "data_ricovero": "28/09/2025"
+  },
+  {
+    "nome": "xxxxx",
+    "cognome": "xxxxxx",
+    "data_nascita": "01/01/1980",
+    "data_ricovero": "28/09/2025"
+  }
+]

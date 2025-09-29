@@ -1,0 +1,14 @@
+# Compilati Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual env
+venv/
+.env/
+.venv/
+
+# File temporanei
+*.log
+*.tmp

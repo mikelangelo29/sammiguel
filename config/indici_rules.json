@@ -1,0 +1,464 @@
+{
+  "ANAMNESI": {
+    "Livello di Vigilanza": {
+      "nessuna risposta": {"criticita": "Critico"},
+      "risposta generalizzata": {"criticita": "Critico"},
+      "risposta localizzata": {"criticita": "Critico"},
+      "confuso-agitato": {"criticita": "Critico"},
+      "confuso-inappropriato": {"criticita": "Critico"},
+      "confuso-appropriato": {"criticita": "Critico"},
+      "automatico-appropriato": {"criticita": "Non Critico"},
+      "finalizzato-appropriato": {"criticita": "Non Critico"}
+    },
+    "Via di somministrazione alimenti:": {
+      "os-non autonoma": {"criticita": "Critico"},
+      "os-monitorata": {"criticita": "Critico"},
+      "os-indipendente": {"criticita": "Non critico"},
+      "parenterale": {"criticita": "Non critico"},
+      "enterale (sng)": {"criticita": "Non critico"},
+      "enterale (peg)": {"criticita": "Non critico"}
+    },
+    "Modificazioni recenti dello stato nutrizionale": {
+      "si": {"criticita": "Non etichettabile"},
+      "no": {"criticita": "Non etichettabile"}
+    },
+    "Eventuali polmoniti pregresse": {
+      "si": {"criticita": "Critico"},
+      "no": {"criticita": "Non critico"}
+    },
+    "Modalità assunzione farmaci": {
+      "regolare": {"criticita": "Non critico"},
+      "intere in semisolido": {"criticita": "Critico"},
+      "tritate in semisolido": {"criticita": "Critico"},
+      "via enterale": {"criticita": "Non critico"}
+    },
+    "Alimentazione attuale": {
+      "per os": {"criticita": "Non etichettabile"},
+      "SNG": {"criticita": "Non critico"},
+      "PEG": {"criticita": "Non critico"}
+    },
+    "Consistenze bevande assunte (IDDSI)": {
+      "0, Liquido": {"criticita": "Non etichettabile"},
+      "1, Leggermente Denso": {"criticita": "Non etichettabile"},
+      "2, Modeatamente denso": {"criticita": "Non etichettabile"},
+      "3, Denso": {"criticita": "Non etichettabile"},
+      "4, Molto Denso": {"criticita": "Non etichettabile"}
+    },
+    "Consistenze alimenti assunti (IDDSI)": {
+      "3. Sciropposo": {"criticita": "Non etichettabile"},
+      "4. Cremoso": {"criticita": "Non etichettabile"},
+      "5.Tritato fine umido": {"criticita": "Non etichettabile"},
+      "6. Tenero spezzettato": {"criticita": "Non etichettabile"},
+      "7. Normale": {"criticita": "Non etichettabile"}
+    }
+  },
+  "OSSERVAZIONE": {
+    "Livello igiene orale": {
+      "Buono": {"criticita": "Non Critico"},
+      "Sufficiente": {"criticita": "Non Critico"},
+      "Scarso": {"criticita": "Critico"},
+      "Molto scarso": {"criticita": "Critico"}
+    },
+    "Residui alimentari orali:": {
+      "Si": {"criticita": "Critico"},
+      "No": {"criticita": "Non Critico"}
+    },
+    "Cannula tracheale": {
+      "Si": {"criticita": "Critico"},
+      "No": {"criticita": "Non Critico"}
+    },
+    "Controllo posturale": {
+      "Fisiologico": {"criticita": "Non Critico"},
+      "Patologico": {"criticita": "Critico"}
+    },
+    "Scialorrea": {
+      "Si": {"criticita": "Critico"},
+      "No": {"criticita": "Non Critico"}
+    },
+    "Voce gorgogliante:": {
+      "Si": {"criticita": "Critico"},
+      "No": {"criticita": "Non Critico"}
+    },
+    "Tosse volontaria": {
+      "Efficace": {"criticita": "Critico"},
+      "Ipovalida": {"criticita": "Non Critico"},
+      "Assente": {"criticita": "Non Critico"}
+    },
+    "Dispnea": {
+      "Si": {"criticita": "Critico"},
+      "No": {"criticita": "Non Critico"}
+    },
+    "Deficit visivi": {
+      "Si": {"criticita": "Critico"},
+      "No": {"criticita": "Non Critico"}
+    },
+    "Deficit uditivi": {
+      "Si": {"criticita": "Critico"},
+      "No": {"criticita": "Non Critico"}
+    },
+    "Presenza di neglect": {
+      "Si": {"criticita": "Critico"},
+      "No": {"criticita": "Non Critico"}
+    },
+    "Presenza di disartria": {
+      "Si": {"criticita": "Critico"},
+      "No": {"criticita": "Non Critico"}
+    }
+  },
+  "MORFODINAMICA": {
+    "Labbra": {
+      "Protrusione": {
+        "Fisiologica": {"criticita": "Non Critico"},
+        "Ridotta": {"criticita": "Critico"},
+        "Deviata": {"criticita": "Critico"},
+        "Assente": {"criticita": "Critico"}
+      },
+      "Retrazione": {
+        "Fisiologica": {"criticita": "Non Critico"},
+        "Ridotta": {"criticita": "Critico"},
+        "Deviata": {"criticita": "Critico"},
+        "Assente": {"criticita": "Critico"}
+      },
+      "Competenza": {
+        "Buona": {"criticita": "Non Critico"},
+        "Sufficiente": {"criticita": "Non Critico"},
+        "Deficitaria": {"criticita": "Critico"}
+      },
+      "Tono": {
+        "Ipotono": {"criticita": "Critico"},
+        "Normale": {"criticita": "Non Critico"},
+        "Ipertono": {"criticita": "Critico"}
+      },
+      "Deviazione a riposo": {
+        "A destra": {"criticita": "Critico"},
+        "A sinistra": {"criticita": "Critico"},
+        "Nessuna": {"criticita": "Non Critico"}
+      }
+    },
+    "Lingua": {
+      "Protrusione": {
+        "Adeguata": {"criticita": "Non Critico"},
+        "Ridotta": {"criticita": "Critico"},
+        "Deviata": {"criticita": "Critico"},
+        "Assente": {"criticita": "Critico"}
+      },
+      "Retropulsione": {
+        "Adeguata": {"criticita": "Non Critico"},
+        "Ridotta": {"criticita": "Critico"},
+        "Assente": {"criticita": "Critico"}
+      },
+      "Laterlizzazione a dx": {
+        "Adeguata": {"criticita": "Non Critico"},
+        "Ridotta": {"criticita": "Critico"},
+        "Assente": {"criticita": "Critico"}
+      },
+      "Laterlizzazione a sx": {
+        "Adeguata": {"criticita": "Non Critico"},
+        "Ridotta": {"criticita": "Critico"},
+        "Assente": {"criticita": "Critico"}
+      },
+      "Trofismo": {
+        "Adeguato": {"criticita": "Non Critico"},
+        "Alterato": {"criticita": "Critico"}
+      },
+      "Tono": {
+        "Ipotono": {"criticita": "Critico"},
+        "Normale": {"criticita": "Non Critico"},
+        "Ipertono": {"criticita": "Critico"}
+      },
+      "Forza": {
+        "Adeguata": {"criticita": "Non Critico"},
+        "Ridotta": {"criticita": "Critico"},
+        "Assente": {"criticita": "Critico", "gravita": "Alta"}
+      },
+      "Velocità": {
+        "Adeguata": {"criticita": "Non Critico"},
+        "Ridotta": {"criticita": "Critico"},
+        "Assente": {"criticita": "Critico"}
+      },
+      "Ampiezza movimenti": {
+        "Adeguata": {"criticita": "Non Critico"},
+        "Ridotta": {"criticita": "Critico"},
+        "Assente": {"criticita": "Critico"}
+      },
+      "Deficit di lato": {
+        "Nessuno": {"criticita": "Non Critico"},
+        "A destra": {"criticita": "Critico"},
+        "A Sinistra": {"criticita": "Critico"}
+      }
+    },
+    "Palato duro": {
+      "Aspetto": {
+        "Normle": {"criticita": "Non Critico"},
+        "Alterato": {"criticita": "Critico"}
+      }
+    },
+    "Velo del palato": {
+      "Tono": {
+        "Ipotono": {"criticita": "Critico"},
+        "Normale": {"criticita": "Non Critico"},
+        "Ipertono": {"criticita": "Critico"}
+      },
+      "Simmetria a riposo": {
+        "Adeguata": {"criticita": "Non Critico"},
+        "Deviazione a dx": {"criticita": "Critico"},
+        "Deviazione a sx": {"criticita": "Critico"}
+      },
+      "Elevazione": {
+        "Simmetrica": {"criticita": "Non Critico"},
+        "Asimmetrica": {"criticita": "Critico"},
+        "Insufficentte": {"criticita": "Critico"}
+      },
+      "Iperrinofonia": {
+        "Presente": {"criticita": "Critico"},
+        "Assente": {"criticita": "Non Critico"}
+      }
+    },
+    "Mandibola": {
+      "Deviazione ini apertura": {
+        "Nessuna": {"criticita": "Non Critico"},
+        "Destra": {"criticita": "Critico"},
+        "Sinistra": {"criticita": "Critico"}
+      },
+      "Deviazione a riposo": {
+        "Nessuna": {"criticita": "Non Critico"},
+        "Destra": {"criticita": "Critico"},
+        "Sinistra": {"criticita": "Critico"}
+      },
+      "Tono mm masticatori": {
+        "Normali": {"criticita": "Non Critico"},
+        "Ipotonoci": {"criticita": "Critico"},
+        "Rigidità": {"criticita": "Critico"}
+      }
+    },
+    "Elevazione laringe": {
+      "fisiologica": {"criticita": "Non Critico"},
+      "appena sufficiente": {"criticita": "Critico"},
+      "ridotta": {"criticita": "Critico"},
+      "assente": {"criticita": "Critico"},
+      "ritardata": {"criticita": "Critico"}
+    }
+  },
+"PRASSIE BLF": {
+  "Mostrare la lingua": {
+    "0": {"criticita": "Critico"},
+    "1": {"criticita": "Critico"},
+    "2": {"criticita": "Non Critico"}
+  },
+  "Fischio": {
+    "0": {"criticita": "Critico"},
+    "1": {"criticita": "Critico"},
+    "2": {"criticita": "Non Critico"}
+  },
+  "Sbadigliare": {
+    "0": {"criticita": "Critico"},
+    "1": {"criticita": "Critico"},
+    "2": {"criticita": "Non Critico"}
+  },
+  "Toccarsi il naso con la lingua": {
+    "0": {"criticita": "Critico"},
+    "1": {"criticita": "Critico"},
+    "2": {"criticita": "Non Critico"}
+  },
+  "Fare una pernacchia": {
+    "0": {"criticita": "Critico"},
+    "1": {"criticita": "Critico"},
+    "2": {"criticita": "Non Critico"}
+  },
+  "Dare un bacio": {
+    "0": {"criticita": "Critico"},
+    "1": {"criticita": "Critico"},
+    "2": {"criticita": "Non Critico"}
+  },
+  "Battere i denti": {
+    "0": {"criticita": "Critico"},
+    "1": {"criticita": "Critico"},
+    "2": {"criticita": "Non Critico"}
+  },
+  "Fare il galoppo con la lingua": {
+    "0": {"criticita": "Critico"},
+    "1": {"criticita": "Critico"},
+    "2": {"criticita": "Non Critico"}
+  },
+  "Soffiare": {
+    "0": {"criticita": "Critico"},
+    "1": {"criticita": "Critico"},
+    "2": {"criticita": "Non Critico"}
+  },
+  "Schiarirsi la gola": {
+    "0": {"criticita": "Critico"},
+    "1": {"criticita": "Critico"},
+    "2": {"criticita": "Non Critico"}
+  },
+  "Totale": {
+    "<17": {"criticita": "Critico"},
+    ">=17": {"criticita": "Non Critico"}
+  }
+},
+
+  "BEDSIDE": {
+    "Prova 5 ml": {
+      "Superata": {"criticita": "Critico"},
+      "Non superata": {"criticita": "Non Critico"}
+    },
+    "Prova 60 ml": {
+      "Superata": {"criticita": "Critico"},
+      "Non superata": {"criticita": "Non Critico"}
+    },
+    "Osservazioni": {
+      "Gag reflex": {
+        "Assente": {"criticita": "Critico"},
+        "Ritardato": {"criticita": "Critico"},
+        "Efficace": {"criticita": "Non Critico"}
+      },
+      "Elevazione laringea": {
+        "assente": {"criticita": "Critico", "gravita": "Alta"},
+        "ridotta": {"criticita": "Critico"},
+        "multipla": {"criticita": "Critico"},
+        "efficace": {"criticita": "Non Critico"},
+        "ritardata": {"criticita": "Critico"}
+      },
+      "Tosse riflessa": {
+        "Non pervenuta": {"criticita": "Critico"},
+        "Ipovalida": {"criticita": "Critico"},
+        "Efficace": {"criticita": "Non Critico"}
+      },
+      "Saturazione": {
+        "stabile": {"criticita": "Non Critico"},
+        "calo 2%": {"criticita": "Critico"},
+        "calo 5%": {"criticita": "Critico"},
+        "calo >5%": {"criticita": "Critico"}
+      },
+      "Tentativi multipli": {
+        "si": {"criticita": "Non Critico"},
+        "no": {"criticita": "Critico"}
+      },
+      "Voce": {
+        "inalterata": {"criticita": "Non Critico"},
+        "gorgoglliante": {"criticita": "Critico"},
+        "strozzata": {"criticita": "Critico"},
+        "velata": {"criticita": "Critico"}
+      },
+      "Segni di penetrazione e/o aspirazione": {
+        "si": {"criticita": "Non Critico"},
+        "no": {"criticita": "Critico"}
+      }
+    }
+  },
+  "OSSERVAZIONE PASTO": {
+    "Livelli di vigilanza": {
+      "Adeguati": {"criticita": "Non Critico"},
+      "Fluttuanti": {"criticita": "Critico"},
+      "Insufficienti": {"criticita": "Critico"}
+    },
+    "Consistenza (IDDSI)": {
+      "3.sciropposo": {"criticita": "Non etichettabile"},
+      "4.cremoso": {"criticita": "Non etichettabile"},
+      "5.Tritato fine umido": {"criticita": "Non etichettabile"},
+      "6. Tenero spezzettato": {"criticita": "Non etichettabile"},
+      "7. Normale": {"criticita": "Non etichettabile"}
+    },
+    "Autonomo": {
+      "si": {"criticita": "Non Critico"},
+      "no": {"criticita": "Critico"}
+    },
+    "Rifiuta il cibo": {
+      "si": {"criticita": "Critico"},
+      "no": {"criticita": "Non Critico"}
+    },
+    "Modalità assunzione": {
+      "sedia": {"criticita": "Non etichettabile"},
+      "letto": {"criticita": "Non etichettabile"},
+      "carrozzina": {"criticita": "Non etichettabile"}
+    },
+    "Edentule": {
+      "si": {"criticita": "Critico"},
+      "no": {"criticita": "Non Critico"}
+    },
+    "Protesi dentaria": {
+      "si": {"criticita": "Non Critico"},
+      "no": {"criticita": "Critico"}
+    },
+    "Masticazione": {
+      "ridotta": {"criticita": "Critico"},
+      "efficace": {"criticita": "Non Critico"},
+      "inefficace": {"criticita": "Critico"},
+      "vorace": {"criticita": "Critico"}
+    },
+    "Deglutisce senza masticare": {
+      "si": {"criticita": "Critico"},
+      "no": {"criticita": "Non Critico"}
+    },
+    "Fuoriuscita di cibo dalla bocca": {
+      "si": {"criticita": "Critico"},
+      "no": {"criticita": "Non Critico"}
+    },
+    "Fuoriuscita di cibo dal  naso": {
+      "si": {"criticita": "Critico"},
+      "no": {"criticita": "Non Critico"}
+    },
+    "Comparsa di tosse riflessa": {
+      "si": {"criticita": "Critico"},
+      "no": {"criticita": "Non Critico"}
+    },
+    "Comparsa di tosse volontaria": {
+      "si": {"criticita": "Critico"},
+      "no": {"criticita": "Non Critico"}
+    },
+    "Si distrae continuamente": {
+      "si": {"criticita": "Critico"},
+      "no": {"criticita": "Non Critico"}
+    },
+    "Escursione laringea": {
+      "funzionale": {"criticita": "Non Critico"},
+      "ridotta": {"criticita": "Critico"},
+      "minima": {"criticita": "Critico"},
+      "multipla": {"criticita": "Critico"}
+    },
+    "Voce durante/dopo pasto": {
+      "normale": {"criticita": "Non Critico"},
+      "afona": {"criticita": "Critico"},
+      "umida": {"criticita": "Critico"},
+      "gorgogliante": {"criticita": "Critico"},
+      "strozzata": {"criticita": "Critico"},
+      "soffiata": {"criticita": "Critico"},
+      "velata": {"criticita": "Critico"},
+      "rauca": {"criticita": "Critico"}
+    },
+    "Residui orali": {
+      "si": {"criticita": "Critico"},
+      "no": {"criticita": "Non Critico"}
+    },
+    "Durata del pasto": {
+      "< 20 min": {"criticita": "Non Critico"},
+      "20-30 min": {"criticita": "Non Critico"},
+      ">30 min": {"criticita": "Critico"}
+    },
+    "Assume farmaci per os durante il PASTO": {
+      "si": {"criticita": "Non etichettabile"},
+      "no": {"criticita": "Non etichettabile"}
+    }
+  },
+  "AUTOVALUTAZIONE (GETS)": {
+    "for ogni domanda in autovalutazione": {
+      "<4": {"criticita": "Non Critico"},
+      "4<risposta=<5": {"criticita": "Critico", "gravita": "Moderata"},
+      ">5": {"criticita": "Critico", "gravita": "Alta"}
+    }
+  },
+  "CONCLUSIONI": {
+    "Disfagia": {
+      "si": {"criticita": "Critico"},
+      "no": {"criticita": "Non Critico"}
+    },
+    "Scala Ddos": {
+      "1. disfagia severa": {"criticita": "Critico"},
+      "2, moderata-severa": {"criticita": "Critico"},
+      "3. moderata": {"criticita": "Critico"},
+      "4. lieve-moderata": {"criticita": "Critico"},
+      "5. lieve": {"criticita": "Critico"},
+      "6. alcuni limiti funzionali": {"criticita": "Non Critico"},
+      "7, normale": {"criticita": "Non Critico"}
+    }
+  }
+}
