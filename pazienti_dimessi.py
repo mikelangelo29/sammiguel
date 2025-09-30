@@ -6,7 +6,7 @@ from datetime import datetime
 
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QLabel, QTableWidget, QTableWidgetItem, QPushButton,
-    QHBoxLayout, QDialog, QFormLayout, QLineEdit, QDateEdit, QMessageBox, QApplication
+    QHBoxLayout, QDialog, QFormLayout, QLineEdit, QDateEdit, QMessageBox, QApplication, QHeaderView
 )
 from PyQt5.QtCore import Qt, QDate
 
@@ -72,7 +72,7 @@ class PazientiDimessiWindow(QWidget):
         layout.setSpacing(24)
 
         label = QLabel("Elenco Pazienti Dimessi")
-        label.setStyleSheet("font-size: 19px; font-weight: bold; color: #023047; padding-bottom: 12px;")
+        label.setStyleSheet("font-size: 22px; font-weight: bold; color: #023047; padding-bottom: 12px;")
         label.setAlignment(Qt.AlignCenter)
         layout.addWidget(label)
 
@@ -86,13 +86,85 @@ class PazientiDimessiWindow(QWidget):
         self.aggiorna_btn.clicked.connect(self.aggiorna_dati_dimessi)
 
         btn_layout.addWidget(self.elimina_btn)
-        btn_layout.addStretch()
         btn_layout.addWidget(self.aggiorna_btn)
+
+        # Barra di ricerca accanto ai pulsanti
+        self.search_edit = QLineEdit()
+        self.search_edit.setFixedWidth(250)   # stessa misura di Attivi
+        self.search_edit.setFixedHeight(27) 
+        self.search_edit.setPlaceholderText("🔎 Cerca...")
+        self.search_edit.textChanged.connect(self.filtra_tabella)
+        # stile con bordo blu scuro sottile
+        self.search_edit.setStyleSheet("""
+            QLineEdit {
+                border: 1px solid #0D47A1;
+                border-radius: 4px;
+                padding: 4px 8px;
+                font-size: 13px;
+            }
+            QLineEdit:focus {
+                border: 2px solid #1565C0;
+            }
+        """)
+
+        btn_layout.addWidget(self.search_edit)
+
+        btn_layout.addStretch()
         layout.addLayout(btn_layout)
 
+
         self.table = QTableWidget()
+        self.table.setStyleSheet("""
+            QTableWidget {
+                font-size: 13px;
+                border: none;
+                background-color: #e6e6e6;   /* grigio chiaro uniforme */
+            }
+            QHeaderView::section {
+                background-color: #d6d6d6;   /* header grigio medio */
+                font-size: 14px;
+                font-weight: bold;
+                color: #212121;
+                padding: 6px;
+                border: none;
+            }
+            QTableWidget::item {
+                padding: 6px 8px;
+            }
+            QTableWidget::item:selected {
+                background: #B3E5FC;
+                color: #212121;
+            }
+            QScrollBar:vertical {
+                width: 14px;
+                background: #e0e0e0;
+                margin: 0px;
+                border-radius: 6px;
+            }
+            QScrollBar::handle:vertical {
+                background: #9e9e9e;
+                min-height: 24px;
+                border-radius: 6px;
+            }
+            QScrollBar:horizontal {
+                height: 14px;
+                background: #e0e0e0;
+                margin: 0px;
+                border-radius: 6px;
+            }
+            QScrollBar::handle:horizontal {
+                background: #9e9e9e;
+                min-width: 24px;
+                border-radius: 6px;
+            }
+        """)
+
+
         self.table.setColumnCount(5)
         self.table.setHorizontalHeaderLabels(["Nome", "Cognome", "Data di nascita", "Data di ricovero", ""])
+        for i in range(self.table.columnCount()):
+            self.table.horizontalHeaderItem(i).setTextAlignment(Qt.AlignCenter)
+
         self.table.setMinimumWidth(700)
         self.table.setAlternatingRowColors(False)
         self.table.verticalHeader().setVisible(False)
@@ -104,6 +176,15 @@ class PazientiDimessiWindow(QWidget):
 
         self.aggiorna_tabella()
         layout.addWidget(self.table)
+
+        # 🔹 Gestione larghezza colonne
+        header = self.table.horizontalHeader()
+        for i in range(self.table.columnCount() - 1):  # tutte meno l'ultima
+            header.setSectionResizeMode(i, QHeaderView.Stretch)
+
+# ultima colonna (pulsanti "Scheda")
+        header.setSectionResizeMode(self.table.columnCount() - 1, QHeaderView.ResizeToContents)
+
 
     def carica_pazienti_dimessi(self):
         if FILE_DIMESSI.exists():
@@ -124,12 +205,36 @@ class PazientiDimessiWindow(QWidget):
 
             for i, value in enumerate([nome, cognome, nascita, ricovero]):
                 item = QTableWidgetItem(value)
-                item.setTextAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+                item.setTextAlignment(Qt.AlignCenter)
                 self.table.setItem(riga, i, item)
 
             btn = QPushButton("Scheda")
+            btn.setFixedWidth(100)   # leggermente più largo
+            btn.setFixedHeight(25)   # altezza invariata
+            btn.setStyleSheet("""
+            QPushButton {
+                font-size: 11px;
+                background-color: #455A64;   /* blu petrolio */
+                color: white;
+                border-radius: 4px;
+            }
+            QPushButton:hover {
+                background-color: #546E7A;   /* blu petrolio più chiaro */
+            }
+            QPushButton:pressed {
+                background-color: #37474F;   /* blu petrolio più scuro */
+                padding-top: 2px;
+                padding-bottom: 0px;
+            }
+            """)
             btn.clicked.connect(partial(self.apri_scheda, riga))
-            self.table.setCellWidget(riga, 4, btn)
+            # 🔹 Wrappo il bottone in un layout con margini a destra
+            cell_widget = QWidget()
+            cell_layout = QHBoxLayout(cell_widget)
+            cell_layout.setContentsMargins(0, 0, 10, 0)  # margine destro
+            cell_layout.addWidget(btn)
+            cell_layout.setAlignment(Qt.AlignRight)
+            self.table.setCellWidget(riga, 4, cell_widget)
 
         self.table.resizeRowsToContents()
 
@@ -201,6 +306,15 @@ class PazientiDimessiWindow(QWidget):
             sola_lettura=True 
         )
         self.scheda.show()
+
+    def filtra_tabella(self):
+        testo = self.search_edit.text().lower().strip()
+        for riga in range(self.table.rowCount()):
+            nome = self.table.item(riga, 0).text().lower()
+            cognome = self.table.item(riga, 1).text().lower()
+            visibile = testo in nome or testo in cognome
+            self.table.setRowHidden(riga, not visibile)
+
 
     def calcola_eta(self, data_nascita):
         nascita = datetime.strptime(data_nascita, "%d/%m/%Y")

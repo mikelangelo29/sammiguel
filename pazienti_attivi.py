@@ -75,37 +75,110 @@ class PazientiAttiviWindow(QWidget):
         layout.setSpacing(16)
 
         label = QLabel("Elenco Pazienti Attivi")
-        label.setStyleSheet("font-size: 19px; font-weight: bold; color: #023047; padding-bottom: 9px;")
+        label.setStyleSheet("font-size: 22px; font-weight: bold; color: #023047; padding-bottom: 9px;")
         label.setAlignment(Qt.AlignCenter)
         layout.addWidget(label)
 
         btn_layout = QHBoxLayout()
         self.dimetti_btn = QPushButton("Dimetti paziente")
-        self.dimetti_btn.setStyleSheet("font-size:13px; background:#ffa726; color:white; padding:2px 11px; border-radius:6px;")
+        self.dimetti_btn.setStyleSheet("font-size:14px; background:#ffa726; color:white; padding:2px 11px; border-radius:6px;")
         self.dimetti_btn.clicked.connect(self.dimetti_paziente)
 
         self.nuovo_btn = QPushButton("Nuovo paziente")
-        self.nuovo_btn.setStyleSheet("font-size:13px; background:#43a047; color:white; padding:2px 11px; border-radius:6px;")
+        self.nuovo_btn.setStyleSheet("font-size:14px; background:#43a047; color:white; padding:2px 11px; border-radius:6px;")
         self.nuovo_btn.clicked.connect(self.nuovo_paziente)
 
         self.elimina_btn = QPushButton("Elimina selezionato")
-        self.elimina_btn.setStyleSheet("font-size:13px; background:#e53935; color:white; padding:2px 11px; border-radius:6px;")
+        self.elimina_btn.setStyleSheet("font-size:14px; background:#e53935; color:white; padding:2px 11px; border-radius:6px;")
         self.elimina_btn.clicked.connect(self.elimina_paziente)
 
         self.visualizza_dimessi_btn = QPushButton("Visualizza Dimessi")
-        self.visualizza_dimessi_btn.setStyleSheet("font-size:13px; background:#1976d2; color:white; padding:2px 11px; border-radius:6px;")
+        self.visualizza_dimessi_btn.setStyleSheet("font-size:14px; background:#1976d2; color:white; padding:2px 11px; border-radius:6px;")
         self.visualizza_dimessi_btn.clicked.connect(self.apri_finestra_dimessi)
 
         btn_layout.addWidget(self.dimetti_btn)
         btn_layout.addWidget(self.nuovo_btn)
         btn_layout.addWidget(self.elimina_btn)
         btn_layout.addWidget(self.visualizza_dimessi_btn)
+
+        # Barra di ricerca come box compatto accanto a "Visualizza Dimessi"
+        self.search_edit = QLineEdit()
+        self.search_edit.setFixedWidth(250)
+        self.search_edit.setFixedHeight(25)
+        self.search_edit.setPlaceholderText("🔍 Cerca...")
+        self.search_edit.textChanged.connect(self.filtra_tabella)
+        # stile con bordo blu scuro sottile
+        self.search_edit.setStyleSheet("""
+            QLineEdit {
+                border: 1px solid #0D47A1;
+                border-radius: 4px;
+                padding: 4px 8px;
+                font-size: 13px;
+            }
+            QLineEdit:focus {
+                border: 2px solid #1565C0;
+            }
+        """)
+
+        btn_layout.addWidget(self.search_edit)
+
         btn_layout.addStretch()
         layout.addLayout(btn_layout)
 
+
+
         self.table = QTableWidget()
+        self.table.setStyleSheet("""
+            QTableWidget {
+                font-size: 13px;
+                border: none;
+                background-color: #e6e6e6;   /* grigio chiaro uniforme */
+            }
+            QHeaderView::section {
+                background-color: #d6d6d6;   /* header grigio medio */
+                font-size: 14px;
+                font-weight: bold;
+                color: #212121;
+                padding: 6px;
+                border: none;
+            }
+            QTableWidget::item {
+                padding: 6px 8px;
+            }
+            QTableWidget::item:selected {
+                background: #B3E5FC;
+                color: #212121;
+            }
+            QScrollBar:vertical {
+                width: 14px;
+                background: #e0e0e0;
+                margin: 0px;
+                border-radius: 6px;
+            }
+            QScrollBar::handle:vertical {
+                background: #9e9e9e;
+                min-height: 24px;
+                border-radius: 6px;
+            }
+            QScrollBar:horizontal {
+                height: 14px;
+                background: #e0e0e0;
+                margin: 0px;
+                border-radius: 6px;
+            }
+            QScrollBar::handle:horizontal {
+                background: #9e9e9e;
+                min-width: 24px;
+                border-radius: 6px;
+            }
+        """)
+
+
         self.table.setColumnCount(5)
         self.table.setHorizontalHeaderLabels(["Nome", "Cognome", "Data di nascita", "Data di ricovero", ""])
+        for i in range(self.table.columnCount()):
+            self.table.horizontalHeaderItem(i).setTextAlignment(Qt.AlignCenter)
+
         self.table.setMinimumWidth(700)
         self.table.setAlternatingRowColors(True)
         self.table.verticalHeader().setVisible(False)
@@ -116,13 +189,20 @@ class PazientiAttiviWindow(QWidget):
         self.table.setFocusPolicy(Qt.StrongFocus)
 
         header = self.table.horizontalHeader()
-        for i in range(4):
+        for i in range(self.table.columnCount() - 1):  # tutte meno l'ultima
             header.setSectionResizeMode(i, QHeaderView.Stretch)
-        header.setSectionResizeMode(4, QHeaderView.ResizeToContents)
+
+        # ultima colonna (pulsanti "Scheda")
+        header.setSectionResizeMode(self.table.columnCount() - 1, QHeaderView.ResizeToContents)
+
 
         self.aggiorna_tabella()
         layout.addWidget(self.table)
         self.adjustSize()
+        self.setMinimumWidth(900)
+        self.setMinimumHeight(320)   # o il valore che preferivi
+
+
 
     def carica_pazienti(self):
         if FILE_ATTIVI.exists():
@@ -151,14 +231,41 @@ class PazientiAttiviWindow(QWidget):
 
             for i, value in enumerate([nome, cognome, nascita, ricovero]):
                 item = QTableWidgetItem(value)
-                item.setTextAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+                item.setTextAlignment(Qt.AlignCenter)
                 self.table.setItem(riga, i, item)
 
-            btn = QPushButton("Scheda")
-            btn.clicked.connect(partial(self.apri_scheda, riga))
-            self.table.setCellWidget(riga, 4, btn)
+        btn = QPushButton("Scheda")
+        btn.setFixedWidth(100)   # leggermente più largo
+        btn.setFixedHeight(25)   # altezza invariata
+        btn.setStyleSheet("""
+            QPushButton {
+                font-size: 11px;
+                background-color: #455A64;   /* blu petrolio elegante */
+                color: white;
+                border-radius: 4px;
+            }
+            QPushButton:hover {
+                background-color: #546E7A;  /* più chiaro al passaggio */
+            }
+            QPushButton:pressed {
+                background-color: #37474F;  /* più scuro quando cliccato */
+                padding-top: 2px;
+                padding-bottom: 0px;
+            }
+        """)
+        btn.setFocusPolicy(Qt.NoFocus)
+        btn.clicked.connect(partial(self.apri_scheda, riga))
+
+        # 🔹 Wrappo il bottone in un layout con margini a destra
+        cell_widget = QWidget()
+        cell_layout = QHBoxLayout(cell_widget)
+        cell_layout.setContentsMargins(0, 0, 10, 0)  # margine destro
+        cell_layout.addWidget(btn)
+        cell_layout.setAlignment(Qt.AlignRight)
+        self.table.setCellWidget(riga, 4, cell_widget)
 
         self.table.resizeRowsToContents()
+
 
     def nuovo_paziente(self):
         dlg = NuovoPazienteDialog(self)
@@ -253,6 +360,15 @@ class PazientiAttiviWindow(QWidget):
             path_cartella=str(cart)
         )
         self.scheda.show()
+
+    def filtra_tabella(self):
+        testo = self.search_edit.text().lower().strip()
+        for riga in range(self.table.rowCount()):
+            nome = self.table.item(riga, 0).text().lower()
+            cognome = self.table.item(riga, 1).text().lower()
+            visibile = testo in nome or testo in cognome
+            self.table.setRowHidden(riga, not visibile)
+
 
     def calcola_eta(self, data_nascita):
         try:
