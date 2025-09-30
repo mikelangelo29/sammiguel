@@ -26,7 +26,7 @@ class HomeFranca(QWidget):
         layout.addWidget(logo)
 
         # Titolo
-        label_title = QLabel("Franca")
+        label_title = QLabel("Franca Dys")
         label_title.setStyleSheet("font-size: 32px; font-weight: bold; color: #023047;")
         label_title.setAlignment(Qt.AlignCenter)
         layout.addWidget(label_title)

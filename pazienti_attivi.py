@@ -128,6 +128,7 @@ class PazientiAttiviWindow(QWidget):
 
 
         self.table = QTableWidget()
+        self.table.setFocusPolicy(Qt.NoFocus)
         self.table.setStyleSheet("""
             QTableWidget {
                 font-size: 13px;
@@ -149,12 +150,18 @@ class PazientiAttiviWindow(QWidget):
                 background: #B3E5FC;
                 color: #212121;
             }
+                                 
+            QTableView::focus {
+                outline: none;
+                border: none;   /* 🔹 elimina contorno focus */
+            }
+                                                     
             QScrollBar:vertical {
                 width: 14px;
                 background: #e0e0e0;
                 margin: 0px;
                 border-radius: 6px;
-            }
+            }                                
             QScrollBar::handle:vertical {
                 background: #9e9e9e;
                 min-height: 24px;
@@ -326,6 +333,22 @@ class PazientiAttiviWindow(QWidget):
             QMessageBox.warning(self, "Selezione", "Seleziona un paziente da dimettere.")
             return
 
+        paziente = self.dati[riga]
+        nome, cognome = paziente["nome"], paziente["cognome"]
+
+        # 🔹 Popup di conferma con pulsanti localizzati
+        msgbox = QMessageBox(self)
+        msgbox.setIcon(QMessageBox.Question)
+        msgbox.setWindowTitle("Conferma dimissione")
+        msgbox.setText(f"Vuoi davvero dimettere il paziente {nome} {cognome}?")
+        msgbox.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        msgbox.button(QMessageBox.Yes).setText("Sì")
+        msgbox.button(QMessageBox.No).setText("No")
+
+        if msgbox.exec_() != QMessageBox.Yes:
+            return  # annullato dall’utente
+
+        # 🔹 Procedi con dimissione
         paziente = self.dati.pop(riga)
         self.salva_pazienti()
 
@@ -346,6 +369,7 @@ class PazientiAttiviWindow(QWidget):
         self.aggiorna_tabella()
         if hasattr(self, "window_dimessi"):
             self.window_dimessi.aggiorna_dati_dimessi()
+
 
     def apri_scheda(self, riga):
         paziente = self.dati[riga]

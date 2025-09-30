@@ -135,6 +135,12 @@ class PazientiDimessiWindow(QWidget):
                 background: #B3E5FC;
                 color: #212121;
             }
+                                 
+            QTableView::focus {
+                outline: none;
+                border: none;   /* 🔹 elimina contorno focus */
+            }
+                                 
             QScrollBar:vertical {
                 width: 14px;
                 background: #e0e0e0;
@@ -172,7 +178,7 @@ class PazientiDimessiWindow(QWidget):
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         self.table.setSelectionMode(QTableWidget.SingleSelection)
-        self.table.setFocusPolicy(Qt.StrongFocus)
+        self.table.setFocusPolicy(Qt.NoFocus)
 
         self.aggiorna_tabella()
         layout.addWidget(self.table)
@@ -251,15 +257,25 @@ class PazientiDimessiWindow(QWidget):
         paziente = self.dati[r]
         nome, cognome = paziente["nome"], paziente["cognome"]
 
-        reply = QMessageBox.question(self, "Conferma eliminazione", f"Eliminare definitivamente {nome} {cognome}?", QMessageBox.Yes | QMessageBox.No)
-        if reply != QMessageBox.Yes:
-            return
+        # 🔹 Popup di conferma in italiano
+        msgbox = QMessageBox(self)
+        msgbox.setIcon(QMessageBox.Question)
+        msgbox.setWindowTitle("Conferma eliminazione")
+        msgbox.setText(f"Vuoi davvero eliminare definitivamente {nome} {cognome}?")
+        msgbox.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        msgbox.button(QMessageBox.Yes).setText("Sì")
+        msgbox.button(QMessageBox.No).setText("No")
 
+        if msgbox.exec_() != QMessageBox.Yes:
+            return  # annullato dall’utente
+
+        # 🔹 Procedi con eliminazione
         del self.dati[r]
         with open(FILE_DIMESSI, "w", encoding="utf-8") as f:
             json.dump(self.dati, f, ensure_ascii=False, indent=2)
         self.aggiorna_tabella()
 
+        # 🔹 Elimina eventuale cartella associata
         prefix = f"{nome}_{cognome}_"
         for d in os.listdir(DIR_DIMESSI):
             if d.startswith(prefix):
