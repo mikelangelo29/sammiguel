@@ -127,6 +127,17 @@ class SchedeValutazioneWindow(QWidget):
         tab.form = QFormLayout()
         tab.form.setVerticalSpacing(7)
 
+                # === Campo Diagnosi (in cima) ===
+        diagnosi_label = QLabel("Diagnosi:")
+        diagnosi_label.setFont(section_font)  # un po' più grande come "Note"
+        diagnosi_label.setStyleSheet("color: #232323; font-size: 15px; font-weight: bold;")
+        tab.diagnosi_edit = QTextEdit()
+        tab.diagnosi_edit.setFont(base_font)
+        tab.diagnosi_edit.setFixedHeight(60)   # più alta delle combo
+        tab.diagnosi_edit.setPlaceholderText("Inserisci la diagnosi...")
+        tab.form.addRow(diagnosi_label, tab.diagnosi_edit)
+
+
         combo_items = {
             "Livello di vigilanza:": ["", "nessuna risposta", "risposta generalizzata", "risposta localizzata", "confuso-agitato", "confuso-inappropriato", "confuso-appropriato", "automatico-appropriato", "finalizzato-appropriato"],
             "Via di somministrazione alimenti:": ["", "os-non autonoma", "os-monitorata", "os-indipendente", "parenterale", "enterale-Sng", "enterale-Peg"],
@@ -860,6 +871,8 @@ class SchedeValutazioneWindow(QWidget):
                 # <<<<<<<<<<<<<<<< FINE AGGIUNTA
                 if hasattr(tab, "note"):
                     scheda_dati["note"] = tab.note.toPlainText()
+                if hasattr(tab, "diagnosi_edit"):
+                    scheda_dati["diagnosi"] = tab.diagnosi_edit.toPlainText()
                 if hasattr(tab, "le_nota"):
                     scheda_dati["le_nota"] = tab.le_nota.text()
                 if hasattr(tab, "le_conclusioni"):
@@ -902,6 +915,8 @@ class SchedeValutazioneWindow(QWidget):
                 # <<<<<<<<<<<<<<<< FINE AGGIUNTA
                 if hasattr(tab, "note"):
                     scheda_dati["note"] = tab.note.toPlainText()
+                if hasattr(tab, "diagnosi_edit"):
+                    scheda_dati["diagnosi"] = tab.diagnosi_edit.toPlainText()             
                 if hasattr(tab, "le_nota"):
                     scheda_dati["le_nota"] = tab.le_nota.text()
                 if hasattr(tab, "le_conclusioni"):
@@ -953,6 +968,9 @@ class SchedeValutazioneWindow(QWidget):
                     if hasattr(tab, "note") and "note" in scheda and tab.note is not None:
                         print(f"DEBUG: set note in tab {scheda['nome']}")
                         tab.note.setPlainText(scheda["note"])
+                    if hasattr(tab, "diagnosi_edit") and "diagnosi" in scheda:
+                        print(f"DEBUG: set diagnosi in tab {scheda['nome']}")
+                        tab.diagnosi_edit.setPlainText(scheda["diagnosi"])
                     if getattr(tab, "le_nota", None) is not None and "le_nota" in scheda:
                         print(f"DEBUG: set le_nota in tab {scheda['nome']}")
                         tab.le_nota.setText(scheda["le_nota"])
@@ -1038,6 +1056,17 @@ class SchedeValutazioneWindow(QWidget):
         import os
         from datetime import datetime
         from PyQt5.QtWidgets import QMessageBox
+
+        reply = QMessageBox.question(
+            self,
+            "Avviso schede vuote",
+            "Attenzione: se ci sono schede vuote, disabilitarle prima di continuare.\n\n"
+            "Vuoi procedere comunque?\n"
+            "Premi Sì per continuare, No per annullare e verificare.",
+            QMessageBox.Yes | QMessageBox.No
+        )
+        if reply != QMessageBox.Yes:
+            return  # 🔹 annulla la generazione del PDF
 
         parent = getattr(self, "paziente_window", None)
         if parent is None:
@@ -1240,7 +1269,15 @@ class SchedeValutazioneWindow(QWidget):
                 y -= 0.7 * cm
 
                 # --- ANAMNESI DEGLUTITORIA ---
+                
                 if nome_scheda == "Dati Anamnestici":
+                    # 🔹 Aggiungi Diagnosi se presente
+                    diagnosi = scheda.get("diagnosi", "")
+                    if diagnosi and diagnosi.strip():
+                        c.setFont("Helvetica-Oblique", 10)
+                        c.drawString(margin + 1*cm, y, f"Diagnosi: {diagnosi}")
+                        y -= 0.5 * cm
+
                     combos = scheda.get("combos", [])
                     for lbl, val in zip(labels_anamnesi, combos):
                         if val and val.strip():
@@ -1376,19 +1413,19 @@ class SchedeValutazioneWindow(QWidget):
                     y -= 0.2*cm
 
                 # --- ALTRO ---
-                else:
+                #else:
                     # Se inserirai altre tab in futuro
-                    for key in ("combos", "lines", "descrizioni", "note", "le_nota", "le_conclusioni", "punteggio"):
-                        val = scheda.get(key)
-                        if val not in ("", None, []):
-                            testo = f"{key}: {val}"
-                            righe = _wrap(testo, "Helvetica", 10, width - 2*margin)
-                            for r in righe:
-                                c.drawString(margin + 1 * cm, y, r)
-                                y -= 0.5 * cm
-                        y -= 0.2 * cm
+                 #   for key in ("combos", "lines", "descrizioni", "note", "le_nota", "le_conclusioni", "punteggio"):
+                 #       val = scheda.get(key)
+                  #      if val not in ("", None, []):
+                   #         testo = f"{key}: {val}"
+                    #        righe = _wrap(testo, "Helvetica", 10, width - 2*margin)
+                     #       for r in righe:
+                      #          c.drawString(margin + 1 * cm, y, r)
+                       #         y -= 0.5 * cm
+                     #   y -= 0.2 * cm
 
-                y -= 0.5 * cm
+            #    y -= 0.5 * cm
 
             # firma logopedista
             c.setFont("Helvetica", 11)
@@ -1410,6 +1447,17 @@ class SchedeValutazioneWindow(QWidget):
         import os, json
         from datetime import datetime
         from PyQt5.QtWidgets import QMessageBox
+
+        reply = QMessageBox.question(
+            self,
+            "Avviso schede vuote",
+            "Attenzione: se ci sono schede vuote, disabilitarle prima di continuare.\n\n"
+            "Vuoi procedere comunque?\n"
+            "Premi Sì per continuare, No per annullare e verificare.",
+            QMessageBox.Yes | QMessageBox.No
+        )
+        if reply != QMessageBox.Yes:
+            return  # 🔹 annulla la generazione del PDF
 
         parent = getattr(self, "paziente_window", None)
         if parent is None:
