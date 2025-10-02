@@ -113,14 +113,66 @@ class SchedeValutazioneWindow(QWidget):
         wrapper = QWidget()
         wrapper_layout = QVBoxLayout(wrapper)
         wrapper_layout.setSpacing(6)
+
+        # crea sempre la checkbox, ma la mostri solo in report mode (callback_salva is None)
         cb = QCheckBox("Usa questa scheda")
         cb.setChecked(True)
         cb.setStyleSheet("font-size:14px; font-weight:bold; color:#1976d2; padding:7px;")
-        wrapper_layout.addWidget(cb)
+
+        if self.callback_salva is None:
+            # 🔹 Valutazione CHIUSA -> fase report: mostriamo la spunta
+            wrapper_layout.addWidget(cb)
+        else:
+            # 🔹 Valutazione APERTA -> fase editing: la checkbox non si vede ma resta “true”
+            cb.setVisible(False)
+
         wrapper_layout.addWidget(tab_widget)
         self.tab_widget.addTab(wrapper, title)
+
+        # manteniamo gli array allineati ai tab
         self.tab_checkboxes.append(cb)
         self.tab_forms.append(tab_widget)
+
+    def _scheda_ha_dati(self, scheda: dict) -> bool:
+        """
+        Ritorna True se la scheda contiene davvero dati significativi.
+        Caso speciale per 'Prassie BLF': se TUTTE le combo sono '' o '0', la consideriamo vuota.
+        """
+        if not isinstance(scheda, dict):
+            return False
+
+        nome = (scheda.get("nome") or "").strip()
+        combos = scheda.get("combos", []) or []
+        lines = scheda.get("lines", []) or []
+        descr = scheda.get("descrizioni", {}) or {}
+        note = (scheda.get("note") or "").strip()
+        diagnosi = (scheda.get("diagnosi") or "").strip()
+
+        # 🔹 Caso speciale: PRASSIE BLF
+        if nome == "Prassie BLF":
+            # Se esistono combo e sono TUTTE '' o '0' → consideriamo la scheda VUOTA
+            if combos and all((str(v or "").strip() in ("", "0")) for v in combos):
+                # ma se ci sono altri campi significativi, allora è compilata
+                if any((str(v or "").strip() for v in lines)) \
+                or any((str(v or "").strip() for v in descr.values())) \
+                or note or diagnosi:
+                    return True
+                return False
+
+        # Regola generale per TUTTE le altre schede
+        if any((str(v or "").strip() for v in combos)):
+            return True
+        if any((str(v or "").strip() for v in lines)):
+            return True
+        if any((str(v or "").strip() for v in descr.values())):
+            return True
+        if note or diagnosi:
+            return True
+
+        return False
+
+
+
 
     def tab_anamnesi(self, base_font, section_font):
         tab = QWidget()
@@ -476,10 +528,7 @@ class SchedeValutazioneWindow(QWidget):
             tab.combos.append(combo)
             tab.form.addRow(QLabel(prassie), combo)
 
-        # --- Totale progressivo ---
-        tab.punteggio_totale_label = QLabel("TOTALE: 0/20")
-        tab.punteggio_totale_label.setFont(QFont("Arial", 12, QFont.Bold))
-        tab.form.addRow(tab.punteggio_totale_label)
+
 
         # --- Note: solo QLabel + QTextEdit senza QGroupBox ---
         note_label = QLabel("Note:")
@@ -492,49 +541,38 @@ class SchedeValutazioneWindow(QWidget):
         tab.form.addRow(note_label, tab.note)
 
         tab.setLayout(tab.form)
+        return tab
 
-        # --- Eventi e logica ---
+                # --- Eventi e logica ---
 
-        def aggiorna_totale():
-            totale = sum(int(combo.currentText()) for combo in tab.combos)
-            tab.punteggio_totale_label.setText(f"TOTALE: {totale}/20")
 
-        for combo in tab.combos:
-            combo.currentIndexChanged.connect(aggiorna_totale)
 
-        def abilita_combo(state):
-            enabled = tab.rb_eseguibili.isChecked()
+        def abilita_combo(_=None):
+            # Abilita se Eseguibili è selezionato (ed eventualmente forza l'esclusione)
+            enabled = tab.rb_eseguibili.isChecked() and not tab.rb_non_eseguibili.isChecked()
             for combo in tab.combos:
                 combo.setEnabled(enabled)
-            if not enabled:
-                # Se non eseguibili azzera le combo
-                for combo in tab.combos:
+                if not enabled:
+                    # se non eseguibili, riportiamo le combo al valore vuoto ("")
                     combo.setCurrentIndex(0)
-            aggiorna_totale()
+           
 
-        # Checkbox mutuamente esclusivi: solo uno selezionabile alla volta
-        def on_eseguibili_checked(state):
-            if state:
+        # Rendi i due checkbox mutuamente esclusivi
+        def on_eseguibili_changed(_):
+            if tab.rb_eseguibili.isChecked():
                 tab.rb_non_eseguibili.setChecked(False)
-            else:
-                if not tab.rb_non_eseguibili.isChecked():
-                    tab.rb_non_eseguibili.setChecked(True)
-            abilita_combo(state)
+            abilita_combo()
 
-        def on_non_eseguibili_checked(state):
-            if state:
+        def on_non_eseguibili_changed(_):
+            if tab.rb_non_eseguibili.isChecked():
                 tab.rb_eseguibili.setChecked(False)
-            else:
-                if not tab.rb_eseguibili.isChecked():
-                    tab.rb_eseguibili.setChecked(True)
-            abilita_combo(not state)
+            abilita_combo()
 
-        tab.rb_eseguibili.stateChanged.connect(on_eseguibili_checked)
-        tab.rb_non_eseguibili.stateChanged.connect(on_non_eseguibili_checked)
+        tab.rb_eseguibili.stateChanged.connect(on_eseguibili_changed)
+        tab.rb_non_eseguibili.stateChanged.connect(on_non_eseguibili_changed)
 
-        # Stato iniziale
-        abilita_combo(True)
-        aggiorna_totale()
+        # Setup iniziale
+        abilita_combo()
 
         return tab
 
@@ -862,7 +900,14 @@ class SchedeValutazioneWindow(QWidget):
                 tab = self.tab_forms[idx]
                 scheda_dati = {"nome": scheda_nome}
                 if hasattr(tab, "combos"):
-                    scheda_dati["combos"] = [combo.currentText() for combo in tab.combos]
+                    valori_combo = [combo.currentText() for combo in tab.combos]
+
+                    # 🔹 Se la scheda è "Prassie BLF" ed è tutta "/" → considerala vuota
+                    if scheda_nome == "Prassie BLF" and all(v == "/" for v in valori_combo):
+                        continue  # ⛔ salta questa scheda, non la aggiunge al report
+
+                    scheda_dati["combos"] = valori_combo
+
                 if hasattr(tab, "lines"):
                     scheda_dati["lines"] = [line.text() for line in tab.lines]
                 # <<<<<<<<<<<<<<<< AGGIUNTA PER BOX DESCRIZIONE
@@ -906,7 +951,14 @@ class SchedeValutazioneWindow(QWidget):
                 tab = self.tab_forms[idx]
                 scheda_dati = {"nome": scheda_nome}
                 if hasattr(tab, "combos"):
-                    scheda_dati["combos"] = [combo.currentText() for combo in tab.combos]
+                    valori_combo = [combo.currentText() for combo in tab.combos]
+
+                    # 🔹 Caso speciale: Prassie BLF tutta "/" → scheda vuota
+                    if scheda_nome == "Prassie BLF" and all((v or "").strip() == "" for v in valori_combo):
+                        continue
+
+                    scheda_dati["combos"] = valori_combo
+
                 if hasattr(tab, "lines"):
                     scheda_dati["lines"] = [line.text() for line in tab.lines]
                 # <<<<<<<<<<<<<<<< AGGIUNTA PER BOX DESCRIZIONE
@@ -949,11 +1001,12 @@ class SchedeValutazioneWindow(QWidget):
                 if self.tab_widget.tabText(tab_idx) == scheda["nome"]:
                     print("DEBUG: Match trovato! Carico valori su tab:", scheda["nome"])
                     tab = self.tab_forms[tab_idx]
+       
                     if hasattr(tab, "combos") and "combos" in scheda and tab.combos is not None:
                         for combo, value in zip(tab.combos, scheda["combos"]):
-                            print(f"DEBUG: set combo {value} in tab {scheda['nome']}")
                             idx_value = combo.findText(value)
                             combo.setCurrentIndex(idx_value if idx_value >= 0 else 0)
+
                     if hasattr(tab, "lines") and "lines" in scheda and tab.lines is not None:
                         for line, value in zip(tab.lines, scheda["lines"]):
                             print(f"DEBUG: set line {value} in tab {scheda['nome']}")
@@ -980,6 +1033,22 @@ class SchedeValutazioneWindow(QWidget):
                     if getattr(tab, "punteggio_totale_label", None) is not None and "punteggio" in scheda:
                         print(f"DEBUG: set punteggio in tab {scheda['nome']}")
                         tab.punteggio_totale_label.setText(scheda["punteggio"])
+
+        if self.callback_salva is None:
+            by_name = {s.get("nome", ""): s for s in valutazione.get("schede", [])}
+            for idx in range(self.tab_widget.count()):
+                nome_tab = self.tab_widget.tabText(idx)
+                cb = self.tab_checkboxes[idx]
+                scheda = by_name.get(nome_tab)
+
+                # 🔹 Prassie BLF: se tutte le combo sono vuote -> considerala non compilata
+                if nome_tab == "Prassie BLF" and scheda:
+                    combos = scheda.get("combos", [])
+                    if combos and all((v or "").strip() == "" for v in combos):
+                        scheda = None
+
+                cb.setChecked(bool(scheda) and self._scheda_ha_dati(scheda))
+
 
     def disabilita_tutti_i_controlli(self):
         self.salva_btn.setEnabled(False)
@@ -1056,17 +1125,6 @@ class SchedeValutazioneWindow(QWidget):
         import os
         from datetime import datetime
         from PyQt5.QtWidgets import QMessageBox
-
-        reply = QMessageBox.question(
-            self,
-            "Avviso schede vuote",
-            "Attenzione: se ci sono schede vuote, disabilitarle prima di continuare.\n\n"
-            "Vuoi procedere comunque?\n"
-            "Premi Sì per continuare, No per annullare e verificare.",
-            QMessageBox.Yes | QMessageBox.No
-        )
-        if reply != QMessageBox.Yes:
-            return  # 🔹 annulla la generazione del PDF
 
         parent = getattr(self, "paziente_window", None)
         if parent is None:
@@ -1249,14 +1307,32 @@ class SchedeValutazioneWindow(QWidget):
             y -= 1 * cm
 
             # --- CONTENUTO SCHEDE ---
+    # Costruisci l’elenco di schede da stampare in base alle spunte
             schede_da_stampare = []
-            for idx, cb in enumerate(self.tab_checkboxes):
-                if cb.isChecked():
-                    nome_tab = self.tab_widget.tabText(idx)
-                    for scheda in valutazione.get("schede", []):
-                        if scheda.get("nome") == nome_tab:
-                            schede_da_stampare.append(scheda)
-                            break
+            by_name = {s.get("nome", ""): s for s in valutazione.get("schede", [])}
+
+            for idx in range(self.tab_widget.count()):
+                # considera solo le schede spuntate
+                if not self.tab_checkboxes[idx].isChecked():
+                    continue
+
+                nome_tab = self.tab_widget.tabText(idx)
+                s = by_name.get(nome_tab)
+                if not s:
+                    continue
+
+                # 🔹 Se PRASSIE BLF e TUTTE le voci sono "0" o vuote → salta
+                if nome_tab == "Prassie BLF":
+                    vals = s.get("combos", [])
+                    # se tutte le combo sono vuote (""), la scheda è saltata
+                    if vals and all(v.strip() == "" for v in vals):
+                        continue
+
+
+                # Altrimenti includi
+                schede_da_stampare.append(s)
+
+
             # === COPILOT FINE: filtro schede selezionate ===
 
             for scheda in schede_da_stampare:
@@ -1448,17 +1524,6 @@ class SchedeValutazioneWindow(QWidget):
         from datetime import datetime
         from PyQt5.QtWidgets import QMessageBox
 
-        reply = QMessageBox.question(
-            self,
-            "Avviso schede vuote",
-            "Attenzione: se ci sono schede vuote, disabilitarle prima di continuare.\n\n"
-            "Vuoi procedere comunque?\n"
-            "Premi Sì per continuare, No per annullare e verificare.",
-            QMessageBox.Yes | QMessageBox.No
-        )
-        if reply != QMessageBox.Yes:
-            return  # 🔹 annulla la generazione del PDF
-
         parent = getattr(self, "paziente_window", None)
         if parent is None:
             QMessageBox.warning(self, "Errore", "Apri la valutazione dalla Scheda Paziente per creare il report.")
@@ -1633,7 +1698,15 @@ class SchedeValutazioneWindow(QWidget):
                     combos = scheda.get("combos", [])
                     if not combos or all((str(v).strip() == "0" or not str(v).strip()) for v in combos):
                         continue
-        # --- FINE PATCH ---
+
+                    # --- PATCH GENERALE: salta schede senza dati reali ---
+                    combos = scheda.get("combos", [])
+                    note = scheda.get("note", "").strip() if "note" in scheda else ""
+                    diagnosi = scheda.get("diagnosi", "").strip() if "diagnosi" in scheda else ""
+
+                    if (not combos or all((not str(v).strip() or str(v).strip() in ("0", "/")) for v in combos)) and not note and not diagnosi:
+                        continue
+# --- FINE PATCH ---
 
                 regole_scheda = rules[nome_json]
                 labels = labels_map.get(nome_json)

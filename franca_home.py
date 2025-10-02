@@ -64,7 +64,7 @@ class HomeFranca(QWidget):
         QMessageBox.information(
             self,
             "Copyright",
-            "© 2024 Dr. Michelangelo Zanelli\n \n Logopedista \n Dottore in Scienze della Comunicazione\n \nmichelangelozanelli@gmail.com\n \n ®Tutti i diritti riservati."
+            "© 2025 Dr. Michelangelo Zanelli\n \n Logopedista \n Dottore in Scienze della Comunicazione\n \nmichelangelozanelli@gmail.com\n \n ®Tutti i diritti riservati."
         )
 
     def open_attivi(self):
