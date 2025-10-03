@@ -158,6 +158,13 @@ class SchedeValutazioneWindow(QWidget):
                 or note or diagnosi:
                     return True
                 return False
+            
+         # 🔹 Caso speciale: AUTOVALUTAZIONE (GETS)
+        if nome == "Autovalutazione (GETS)":
+            if combos and all((str(v or "").strip() in ("", "0")) for v in combos):
+                if note:   # l’unico campo extra in GETS è la nota
+                    return True
+                return False    
 
         # Regola generale per TUTTE le altre schede
         if any((str(v or "").strip() for v in combos)):

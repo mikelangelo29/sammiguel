@@ -230,48 +230,45 @@ class PazientiAttiviWindow(QWidget):
 
     def aggiorna_tabella(self):
         self.table.setRowCount(len(self.dati))
+        self.table.setColumnCount(5)  # 🔹 assicurati che siano 5 colonne (4 dati + 1 pulsante)
+
         for riga, paziente in enumerate(self.dati):
             nome = paziente.get("nome", "")
             cognome = paziente.get("cognome", "")
-            nascita = paziente.get("data_nascita", "")
-            ricovero = paziente.get("data_ricovero", "")
+            data_nascita = paziente.get("data_nascita", "")
+            data_ricovero = paziente.get("data_ricovero", "")
 
-            for i, value in enumerate([nome, cognome, nascita, ricovero]):
+            for i, value in enumerate([nome, cognome, data_nascita, data_ricovero]):
                 item = QTableWidgetItem(value)
                 item.setTextAlignment(Qt.AlignCenter)
                 self.table.setItem(riga, i, item)
 
-        btn = QPushButton("Scheda")
-        btn.setFixedWidth(100)   # leggermente più largo
-        btn.setFixedHeight(25)   # altezza invariata
-        btn.setStyleSheet("""
-            QPushButton {
-                font-size: 11px;
-                background-color: #455A64;   /* blu petrolio elegante */
-                color: white;
-                border-radius: 4px;
-            }
-            QPushButton:hover {
-                background-color: #546E7A;  /* più chiaro al passaggio */
-            }
-            QPushButton:pressed {
-                background-color: #37474F;  /* più scuro quando cliccato */
-                padding-top: 2px;
-                padding-bottom: 0px;
-            }
-        """)
-        btn.setFocusPolicy(Qt.NoFocus)
-        btn.clicked.connect(partial(self.apri_scheda, riga))
+            # 🔹 crea pulsante e assegnalo alla colonna 4
+            btn = QPushButton("Scheda")
+            btn.setFixedWidth(100)
+            btn.setFixedHeight(25)
+            btn.setStyleSheet("""
+                QPushButton {
+                    font-size: 11px;
+                    background-color: #455A64;
+                    color: white;
+                    border-radius: 4px;
+                }
+                QPushButton:hover {
+                    background-color: #546E7A;
+                }
+                QPushButton:pressed {
+                    background-color: #37474F;
+                    padding-top: 2px;
+                    padding-bottom: 0px;
+                }
+            """)
+            btn.setFocusPolicy(Qt.NoFocus)
 
-        # 🔹 Wrappo il bottone in un layout con margini a destra
-        cell_widget = QWidget()
-        cell_layout = QHBoxLayout(cell_widget)
-        cell_layout.setContentsMargins(0, 0, 10, 0)  # margine destro
-        cell_layout.addWidget(btn)
-        cell_layout.setAlignment(Qt.AlignRight)
-        self.table.setCellWidget(riga, 4, cell_widget)
+            # 🔹 collega evento al paziente giusto
+            btn.clicked.connect(partial(self.apri_scheda, riga))
 
-        self.table.resizeRowsToContents()
+            self.table.setCellWidget(riga, 4, btn)  # <-- questa riga era quella mancante
 
 
     def nuovo_paziente(self):
