@@ -195,6 +195,7 @@ class SchedeValutazioneWindow(QWidget):
         tab.diagnosi_edit.setFixedHeight(60)   # più alta delle combo
         tab.diagnosi_edit.setPlaceholderText("Inserisci la diagnosi...")
         tab.form.addRow(diagnosi_label, tab.diagnosi_edit)
+        tab.diagnosi_edit.setMaximumWidth(400)  # 🔹 restringe la larghezza
 
 
         combo_items = {
@@ -1078,6 +1079,17 @@ class SchedeValutazioneWindow(QWidget):
             # QTextEdit
             if hasattr(tab, "note"):
                 tab.note.setReadOnly(True)
+
+            if hasattr(tab, "diagnosi_edit"):
+                tab.diagnosi_edit.setReadOnly(True)
+                tab.diagnosi_edit.setStyleSheet("""
+                    QTextEdit {
+                        background-color: #f8f8f8;
+                        border: 1px solid #cccccc;
+                        color: #333333;
+                    }
+                """)     
+
             # Altri eventuali campi
             if hasattr(tab, "le_nota"):
                 tab.le_nota.setReadOnly(True)

@@ -17,6 +17,8 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet
 from pathlib import Path
 from config import DIR_ATTIVI
+from PyQt5.QtWidgets import QAbstractItemView
+
 
 
 
@@ -154,10 +156,11 @@ class SchedaPazienteWindow(QWidget):
         print("DEBUG cartella paziente:", self.cartella_paziente)
 
 
-        # Valutazioni aperte
+       # Valutazioni aperte
         box_val = QGroupBox("Valutazioni aperte")
         val_layout = QVBoxLayout(box_val)
         self.lista_val = QListWidget()
+        self.lista_val.setSelectionMode(QAbstractItemView.SingleSelection)
         self.aggiorna_lista_valutazioni()
         self.lista_val.itemDoubleClicked.connect(self.apri_fascicolo_valutazione)
         val_layout.addWidget(self.lista_val)
@@ -167,6 +170,7 @@ class SchedaPazienteWindow(QWidget):
         box_val_comp = QGroupBox("Valutazioni completate")
         val_comp_layout = QVBoxLayout(box_val_comp)
         self.lista_val_comp = QListWidget()
+        self.lista_val_comp.setSelectionMode(QAbstractItemView.SingleSelection)
         self.aggiorna_lista_valutazioni_completate()
         self.lista_val_comp.itemDoubleClicked.connect(self.apri_fascicolo_valutazione_completata)
         val_comp_layout.addWidget(self.lista_val_comp)
@@ -176,10 +180,10 @@ class SchedaPazienteWindow(QWidget):
         report_indici_box = QGroupBox("Report Indici Critici")
         report_indici_layout = QVBoxLayout(report_indici_box)
         self.lista_report_indici = QListWidget()
+        self.lista_report_indici.setSelectionMode(QAbstractItemView.SingleSelection)
         for data in self.report_indici:
             item = QListWidgetItem(f"⚠️ {data}")
             item.setFont(font_date)
-            # abilita checkbox
             item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
             item.setCheckState(Qt.Unchecked)
             self.lista_report_indici.addItem(item)
@@ -187,22 +191,28 @@ class SchedaPazienteWindow(QWidget):
         self.lista_report_indici.itemDoubleClicked.connect(self.apri_report_indice_critico)
         report_indici_layout.addWidget(self.lista_report_indici)
         layout.addWidget(report_indici_box)
-        from PyQt5.QtWidgets import QAbstractItemView
 
         # Report completi
         report_completi_box = QGroupBox("Report completi")
         report_completi_layout = QVBoxLayout(report_completi_box)
         self.lista_report_completi = QListWidget()
+        self.lista_report_completi.setSelectionMode(QAbstractItemView.SingleSelection)
         for data in self.report_completi:
             item = QListWidgetItem(f"💾 {data}")
             item.setFont(font_date)
-            # abilita checkbox
             item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
             item.setCheckState(Qt.Unchecked)
             self.lista_report_completi.addItem(item)
         self.lista_report_completi.itemDoubleClicked.connect(self.apri_report_completo)
         report_completi_layout.addWidget(self.lista_report_completi)
         layout.addWidget(report_completi_box)
+
+        # --- 🔹 Gestione selezione esclusiva tra le liste ---
+        self.lista_val.itemSelectionChanged.connect(lambda: self.deseleziona_altre_liste(self.lista_val))
+        self.lista_val_comp.itemSelectionChanged.connect(lambda: self.deseleziona_altre_liste(self.lista_val_comp))
+        self.lista_report_indici.itemSelectionChanged.connect(lambda: self.deseleziona_altre_liste(self.lista_report_indici))
+        self.lista_report_completi.itemSelectionChanged.connect(lambda: self.deseleziona_altre_liste(self.lista_report_completi))
+
         
         # abilita selezione multipla
         
@@ -257,47 +267,83 @@ class SchedaPazienteWindow(QWidget):
 
     # === Eliminazione selezione ===
     def elimina_selezionato(self):
-        removed = False
+        from PyQt5.QtWidgets import QMessageBox
 
-        # valutazioni aperte
-        idx = self.lista_val.currentRow()
-        if idx != -1 and idx < len(self.valutazioni_aperte):
-            del self.valutazioni_aperte[idx]
-            self.lista_val.takeItem(idx)
-            removed = True
+        # --- VALUTAZIONI APERTE ---
+        if self.lista_val.selectedItems():
+            idx = self.lista_val.currentRow()
+            if idx != -1 and idx < len(self.valutazioni_aperte):
+                nome = self.lista_val.item(idx).text()
+                if QMessageBox.question(self, "Conferma",
+                                        f"Eliminare la valutazione aperta:\n{nome}?",
+                                        QMessageBox.Yes | QMessageBox.No) != QMessageBox.Yes:
+                    return
+                del self.valutazioni_aperte[idx]
+                self.lista_val.takeItem(idx)
+                self.salva_su_file()
+                return
 
-        # valutazioni completate
-        idx = self.lista_val_comp.currentRow()
-        if idx != -1 and idx < len(self.valutazioni_completate):
-            del self.valutazioni_completate[idx]
-            self.lista_val_comp.takeItem(idx)
-            removed = True
+        # --- VALUTAZIONI COMPLETATE ---
+        if self.lista_val_comp.selectedItems():
+            idx = self.lista_val_comp.currentRow()
+            if idx != -1 and idx < len(self.valutazioni_completate):
+                nome = self.lista_val_comp.item(idx).text()
+                if QMessageBox.question(self, "Conferma",
+                                        f"Eliminare la valutazione completata:\n{nome}?",
+                                        QMessageBox.Yes | QMessageBox.No) != QMessageBox.Yes:
+                    return
+                del self.valutazioni_completate[idx]
+                self.lista_val_comp.takeItem(idx)
+                self.salva_su_file()
+                return
 
-        # report indici
-        idx = self.lista_report_indici.currentRow()
-        if idx != -1 and idx < len(self.report_indici):
-            del self.report_indici[idx]
-            self.lista_report_indici.takeItem(idx)
-            removed = True
+        # --- REPORT INDICI ---
+        if self.lista_report_indici.selectedItems():
+            idx = self.lista_report_indici.currentRow()
+            if idx != -1 and idx < len(self.report_indici):
+                nome = self.lista_report_indici.item(idx).text()
+                if QMessageBox.question(self, "Conferma",
+                                        f"Eliminare il report indici:\n{nome}?",
+                                        QMessageBox.Yes | QMessageBox.No) != QMessageBox.Yes:
+                    return
+                del self.report_indici[idx]
+                self.lista_report_indici.takeItem(idx)
+                self.salva_su_file()
+                return
 
-        # report completi
-        idx = self.lista_report_completi.currentRow()
-        if idx != -1 and idx < len(self.report_completi):
-            del self.report_completi[idx]
-            self.lista_report_completi.takeItem(idx)
-            removed = True
+        # --- REPORT COMPLETI ---
+        if self.lista_report_completi.selectedItems():
+            idx = self.lista_report_completi.currentRow()
+            if idx != -1 and idx < len(self.report_completi):
+                nome = self.lista_report_completi.item(idx).text()
+                if QMessageBox.question(self, "Conferma",
+                                        f"Eliminare il report completo:\n{nome}?",
+                                        QMessageBox.Yes | QMessageBox.No) != QMessageBox.Yes:
+                    return
+                del self.report_completi[idx]
+                self.lista_report_completi.takeItem(idx)
+                self.salva_su_file()
+                return
 
-        # grafici
-      #  idx = self.lista_grafici.currentRow()
-       # if idx != -1 and idx < len(self.grafici):
-        #    del self.grafici[idx]
-         #   self.lista_grafici.takeItem(idx)
-          #  removed = True
+        # --- Nessuna selezione valida ---
+        QMessageBox.information(self, "Selezione", "Seleziona un elemento da eliminare.")
 
-       # if removed:
-        #    self.salva_su_file()
-        #else:
-         #   QMessageBox.information(self, "Nessuna selezione", "Seleziona una voce da eliminare.")
+
+
+
+
+    def deseleziona_altre_liste(self, lista_attiva):
+        """Deseleziona tutte le altre liste tranne quella attiva."""
+        tutte = [
+            self.lista_val,
+            self.lista_val_comp,
+            self.lista_report_indici,
+            self.lista_report_completi
+        ]
+        for lst in tutte:
+            if lst is not lista_attiva:
+                lst.clearSelection()
+
 
     # === Apertura/creazione valutazioni ===
     def apri_fascicolo_valutazione(self, item):
