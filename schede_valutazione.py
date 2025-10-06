@@ -34,6 +34,8 @@ PRASSIE_MAPPA_DESCRIZIONI = {
 class SchedeValutazioneWindow(QWidget):
     def __init__(self, nome, cognome, eta, callback_salva=None, valutazione_precaricata=None, indice_valutazione=None):
         super().__init__()
+        self.resize(1200, 800)      # 👈 apre la finestra un po’ più larga e alta
+        self.setMinimumSize(1100, 700)
         self.setWindowTitle(f"Valutazione Disfagia - {nome} {cognome}")
         self.setMinimumSize(1024, 700)
         self.callback_salva = callback_salva
@@ -111,6 +113,49 @@ class SchedeValutazioneWindow(QWidget):
         layout.addLayout(salva_layout)
 
         self.tab_widget = QTabWidget(self)
+        # --- Stile dei tab con bordo colorato per sezione ---
+        self.tab_widget.setStyleSheet("""
+                QTabBar::tab {
+                    background: #ffffff;
+                    border: 2px solid #90a4c2;
+                    padding: 6px 14px;
+                    margin-right: 2px;
+                    margin-left: 2px;
+                    border-top-left-radius: 8px;
+                    border-top-right-radius: 8px;
+                    transition: all 0.2s ease-in-out;
+                    min-width: 90px;
+                    text-align: center;
+                }
+
+                /* 💡 Patch per impedire il “taglio” della prima lettera */
+                QTabBar::tab:selected {
+                    background: #f5f9fc;
+                    border: 2px solid #1d4e89;
+                    font-weight: bold;
+                    color: #1d4e89;
+                    padding-left: 16px;     /* 👈 forziamo più spazio interno a sinistra */
+                    padding-right: 16px;    /* 👈 simmetria per mantenere centrato */
+                    margin-left: 0px;       /* 👈 evita shift laterale */
+                    margin-right: 0px;
+                }
+
+
+
+            /* Colori personalizzati per i bordi */
+            QTabBar::tab:nth-child(1) { border-color: #2a9d8f; }  /* Anamnesi */
+            QTabBar::tab:nth-child(2) { border-color: #457b9d; }  /* Osservazione */
+            QTabBar::tab:nth-child(3) { border-color: #8d99ae; }  /* Morfodinamica */
+            QTabBar::tab:nth-child(4) { border-color: #e76f51; }  /* Prassie BLF */
+            QTabBar::tab:nth-child(5) { border-color: #f4a261; }  /* Bedside */
+            QTabBar::tab:nth-child(6) { border-color: #2a9d8f; }  /* Osservazione Pasto */
+            QTabBar::tab:nth-child(7) { border-color: #219ebc; }  /* GETS */
+            QTabBar::tab:nth-child(8) { border-color: #1d3557; }  /* Conclusioni */
+        """)
+
+
+
+
         layout.addWidget(self.tab_widget)
         
         self.tab_checkboxes = []
