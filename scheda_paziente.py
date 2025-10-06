@@ -505,10 +505,11 @@ class SchedaPazienteWindow(QWidget):
         self.report_completi.append(data_valutazione)
         item = QListWidgetItem(f"💾 {data_valutazione}")
         item.setFont(font_date)
+        # 🔹 Solo clic selezionabile, nessuna checkbox
         item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
-        item.setCheckState(Qt.Unchecked)
         self.lista_report_completi.addItem(item)
         self.salva_su_file()
+
 
     def aggiungi_report_indici(self, data_valutazione):
         font_date = QFont()
