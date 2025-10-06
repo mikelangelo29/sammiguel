@@ -54,7 +54,7 @@ class SchedaPazienteWindow(QWidget):
         self.cartella_grafici = self.cartella_paziente / "grafici"
         self.cartella_report_completi.mkdir(exist_ok=True)
         self.cartella_report_indici.mkdir(exist_ok=True)
-        self.cartella_grafici.mkdir(exist_ok=True)
+        # self.cartella_grafici.mkdir(exist_ok=True)
 
         # valori di default se non passati
         if valutazioni_aperte is None:
@@ -180,13 +180,22 @@ class SchedaPazienteWindow(QWidget):
         report_indici_box = QGroupBox("Report Indici Critici")
         report_indici_layout = QVBoxLayout(report_indici_box)
         self.lista_report_indici = QListWidget()
+        # 🔹 Mantieni dimensione costante per ogni riga (icone sempre uguali)
+        self.lista_report_indici.setUniformItemSizes(True)
+        # 🔹 Scrollbar automatica quando serve
+        self.lista_report_indici.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        # 🔹 Evita che la lista si ridimensioni per far entrare tutto
+        self.lista_report_indici.setSizeAdjustPolicy(QListWidget.AdjustIgnored)
+
+
         self.lista_report_indici.setSelectionMode(QAbstractItemView.SingleSelection)
         for data in self.report_indici:
             item = QListWidgetItem(f"⚠️ {data}")
             item.setFont(font_date)
-            item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
-            item.setCheckState(Qt.Unchecked)
+            # Rimuoviamo la possibilità di spunta
+            item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
             self.lista_report_indici.addItem(item)
+
 
         self.lista_report_indici.itemDoubleClicked.connect(self.apri_report_indice_critico)
         report_indici_layout.addWidget(self.lista_report_indici)
@@ -196,13 +205,22 @@ class SchedaPazienteWindow(QWidget):
         report_completi_box = QGroupBox("Report completi")
         report_completi_layout = QVBoxLayout(report_completi_box)
         self.lista_report_completi = QListWidget()
+        # 🔹 Mantieni altezza e dimensione costante per ogni riga
+        self.lista_report_completi.setUniformItemSizes(True)
+        # 🔹 Scrollbar automatica se ci sono molti report
+        self.lista_report_completi.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        # 🔹 Evita che la lista si ridimensioni schiacciando le icone
+        self.lista_report_completi.setSizeAdjustPolicy(QListWidget.AdjustIgnored)
+
+
         self.lista_report_completi.setSelectionMode(QAbstractItemView.SingleSelection)
         for data in self.report_completi:
             item = QListWidgetItem(f"💾 {data}")
             item.setFont(font_date)
-            item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
-            item.setCheckState(Qt.Unchecked)
+            # Rimuoviamo la spunta, resta solo clic selezionabile
+            item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
             self.lista_report_completi.addItem(item)
+
         self.lista_report_completi.itemDoubleClicked.connect(self.apri_report_completo)
         report_completi_layout.addWidget(self.lista_report_completi)
         layout.addWidget(report_completi_box)
@@ -487,15 +505,20 @@ class SchedaPazienteWindow(QWidget):
         self.report_completi.append(data_valutazione)
         item = QListWidgetItem(f"💾 {data_valutazione}")
         item.setFont(font_date)
-        item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsUserCheckable)
+        item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
         item.setCheckState(Qt.Unchecked)
         self.lista_report_completi.addItem(item)
         self.salva_su_file()
 
     def aggiungi_report_indici(self, data_valutazione):
+        font_date = QFont()
+        font_date.setPointSize(12)
         self.report_indici.append(data_valutazione)
-        self.lista_report_indici.addItem(f"⚠️ {data_valutazione}")
-
+        item = QListWidgetItem(f"⚠️ {data_valutazione}")
+        item.setFont(font_date)
+        # 🔸 Disabilita checkbox, mantiene solo click
+        item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
+        self.lista_report_indici.addItem(item)
         self.salva_su_file()
 
 
