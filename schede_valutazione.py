@@ -6,6 +6,31 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 from datetime import datetime
 
+# === Costanti globali per le prassie bucco-linguo-facciali ===
+PRASSIE_VOCI = [
+    "Protrusione lingua",
+    "Lingua in avanti e indietro",
+    "Lingua a destra",
+    "Lingua a sinistra",
+    "Schioccare la lingua",
+    "Sorridere",
+    "Mandare un bacio",
+    "Schema alternato bacio-sorriso",
+    "Gonfiare le guance",
+    "Aprire e chiudere la bocca",
+    "Spostare il labbro a sinistra",
+    "Spostare il labbro a destra",
+    "Soffiare",
+    "Fischiare",
+    "Tossire"
+]
+
+PRASSIE_MAPPA_DESCRIZIONI = {
+    0: "0 - risposta assente o non adeguata",
+    1: "1 - risposta parziale o ottenuta con facilitazione",
+    2: "2 - risposta immediata e adeguata al comando"
+}
+
 class SchedeValutazioneWindow(QWidget):
     def __init__(self, nome, cognome, eta, callback_salva=None, valutazione_precaricata=None, indice_valutazione=None):
         super().__init__()
@@ -114,24 +139,20 @@ class SchedeValutazioneWindow(QWidget):
         wrapper_layout = QVBoxLayout(wrapper)
         wrapper_layout.setSpacing(6)
 
-        # crea sempre la checkbox, ma la mostri solo in report mode (callback_salva is None)
+        # --- Checkbox nascosta (manteniamo per compatibilità logica) ---
         cb = QCheckBox("Usa questa scheda")
-        cb.setChecked(True)
-        cb.setStyleSheet("font-size:14px; font-weight:bold; color:#1976d2; padding:7px;")
+        cb.setChecked(True)      # sempre attiva
+        cb.setVisible(False)     # non visibile nella GUI
+        # 🔹 Non la aggiungiamo al layout
 
-        if self.callback_salva is None:
-            # 🔹 Valutazione CHIUSA -> fase report: mostriamo la spunta
-            wrapper_layout.addWidget(cb)
-        else:
-            # 🔹 Valutazione APERTA -> fase editing: la checkbox non si vede ma resta “true”
-            cb.setVisible(False)
-
+        # --- Aggiungi il contenuto reale del tab ---
         wrapper_layout.addWidget(tab_widget)
         self.tab_widget.addTab(wrapper, title)
 
-        # manteniamo gli array allineati ai tab
+        # --- Manteniamo gli array allineati ai tab (serve per salvataggio) ---
         self.tab_checkboxes.append(cb)
         self.tab_forms.append(tab_widget)
+
 
     def _scheda_ha_dati(self, scheda: dict) -> bool:
         """
@@ -150,14 +171,23 @@ class SchedeValutazioneWindow(QWidget):
 
         # 🔹 Caso speciale: PRASSIE BLF
         if nome == "Prassie BLF":
-            # Se esistono combo e sono TUTTE '' o '0' → consideriamo la scheda VUOTA
-            if combos and all((str(v or "").strip() in ("", "0")) for v in combos):
-                # ma se ci sono altri campi significativi, allora è compilata
+            # Combo può essere: stringa ("0", "") oppure dict {"valore": int, "descrizione": str}
+            def _is_zero_or_empty(x):
+                if isinstance(x, dict):
+                    try:
+                        return int(x.get("valore", 0)) == 0
+                    except Exception:
+                        return True
+                return str(x or "").strip() in ("", "0")
+
+            if combos and all(_is_zero_or_empty(v) for v in combos):
+                # se però ci sono altri campi significativi, allora considerala compilata
                 if any((str(v or "").strip() for v in lines)) \
                 or any((str(v or "").strip() for v in descr.values())) \
                 or note or diagnosi:
                     return True
                 return False
+
             
          # 🔹 Caso speciale: AUTOVALUTAZIONE (GETS)
         if nome == "Autovalutazione (GETS)":
@@ -510,7 +540,7 @@ class SchedeValutazioneWindow(QWidget):
     def tab_prassie_blf(self, base_font, bold_font, section_font):
         tab = QWidget()
         tab.form = QFormLayout()
-        tab.form.setVerticalSpacing(7)
+        tab.form.setVerticalSpacing(10)  # 🔹 un po' più spazio tra righe
 
         # --- Checkbox Eseguibili / Non Eseguibili ---
         check_layout = QHBoxLayout()
@@ -522,26 +552,49 @@ class SchedeValutazioneWindow(QWidget):
         check_layout.addStretch()
         tab.form.addRow(QLabel(""), check_layout)
 
-        prassie_list = [
-            "Mostrare la lingua", "Fischio", "Sbadigliare", "Toccarsi il naso con la lingua", "Fare una pernacchia",
-            "Dare un bacio", "Battere i denti", "Fare il galoppo con la lingua", "Soffiare", "Schiarirsi la gola"
-        ]
+        # --- Lista aggiornata delle prassie ---
+        prassie_list = PRASSIE_VOCI[:]  # usa la costante globale
+
         tab.combos = []
+        tab.combo_by_voce = {}
+
+        # --- ComboBox per ciascuna prassia ---
         for prassie in prassie_list:
             combo = QComboBox()
-            combo.setFont(base_font)
-            combo.setMaximumWidth(60)
-            combo.addItems(["0", "1", "2"])
+
+            # 🔹 Font leggermente ridotto per migliorare la leggibilità
+            combo_font = QFont(base_font)
+            combo_font.setPointSize(max(8, base_font.pointSize() + 1))
+            combo.setFont(combo_font)
+
+            # 🔹 Dimensioni fisse e padding interno (testo non troncato)
+            combo.setFixedWidth(360)
+            combo.setFixedHeight(36)  # 🔹 altezza aumentata per non tagliare testo
+            combo.setStyleSheet("""
+                QComboBox {
+                    padding: 4px 6px;
+                }
+                QComboBox::drop-down {
+                    width: 20px;
+                }
+            """)
+
+            # 🔹 Inserisci item con testo completo (senza abbreviazioni)
+            for val in (0, 1, 2):
+                descr = PRASSIE_MAPPA_DESCRIZIONI[val]
+                combo.addItem(descr, val)
+
             combo.setCurrentIndex(0)
+
+            # 🔹 Aggiungi al form
             tab.combos.append(combo)
+            tab.combo_by_voce[prassie] = combo
             tab.form.addRow(QLabel(prassie), combo)
 
-
-
-        # --- Note: solo QLabel + QTextEdit senza QGroupBox ---
+        # --- Note ---
         note_label = QLabel("Note:")
         note_label.setFont(section_font)
-        note_label.setStyleSheet("margin-bottom:2px;")  # Avvicina la label al campo testo
+        note_label.setStyleSheet("margin-bottom:2px;")
         tab.note = QTextEdit()
         tab.note.setFont(base_font)
         tab.note.setMaximumHeight(60)
@@ -551,38 +604,39 @@ class SchedeValutazioneWindow(QWidget):
         tab.setLayout(tab.form)
         return tab
 
+
                 # --- Eventi e logica ---
 
 
 
-        def abilita_combo(_=None):
+#        def abilita_combo(_=None):
             # Abilita se Eseguibili è selezionato (ed eventualmente forza l'esclusione)
-            enabled = tab.rb_eseguibili.isChecked() and not tab.rb_non_eseguibili.isChecked()
-            for combo in tab.combos:
-                combo.setEnabled(enabled)
-                if not enabled:
-                    # se non eseguibili, riportiamo le combo al valore vuoto ("")
-                    combo.setCurrentIndex(0)
+ #           enabled = tab.rb_eseguibili.isChecked() and not tab.rb_non_eseguibili.isChecked()
+  #          for combo in tab.combos:
+   #             combo.setEnabled(enabled)
+    #            if not enabled:
+     #               # se non eseguibili, riportiamo le combo al valore vuoto ("")
+     #               combo.setCurrentIndex(0)
            
 
         # Rendi i due checkbox mutuamente esclusivi
-        def on_eseguibili_changed(_):
-            if tab.rb_eseguibili.isChecked():
-                tab.rb_non_eseguibili.setChecked(False)
-            abilita_combo()
+#        def on_eseguibili_changed(_):
+#            if tab.rb_eseguibili.isChecked():
+#                tab.rb_non_eseguibili.setChecked(False)
+#            abilita_combo()
+#
+ #       def on_non_eseguibili_changed(_):
+#            if tab.rb_non_eseguibili.isChecked():
+#                tab.rb_eseguibili.setChecked(False)
+ #           abilita_combo()
 
-        def on_non_eseguibili_changed(_):
-            if tab.rb_non_eseguibili.isChecked():
-                tab.rb_eseguibili.setChecked(False)
-            abilita_combo()
-
-        tab.rb_eseguibili.stateChanged.connect(on_eseguibili_changed)
-        tab.rb_non_eseguibili.stateChanged.connect(on_non_eseguibili_changed)
+#        tab.rb_eseguibili.stateChanged.connect(on_eseguibili_changed)
+#        tab.rb_non_eseguibili.stateChanged.connect(on_non_eseguibili_changed)
 
         # Setup iniziale
-        abilita_combo()
+ #       abilita_combo()
 
-        return tab
+#        return tab
 
 
     def tab_bedside(self, base_font, section_font):
@@ -908,13 +962,36 @@ class SchedeValutazioneWindow(QWidget):
                 tab = self.tab_forms[idx]
                 scheda_dati = {"nome": scheda_nome}
                 if hasattr(tab, "combos"):
-                    valori_combo = [combo.currentText() for combo in tab.combos]
+                    if scheda_nome == "Prassie BLF":
+                        combos_payload = []  # <-- qui la creiamo subito
+                        for combo in tab.combos:
+                            data = combo.currentData()
+                            if data is None:
+                                # combo creata con addItems => nessun userData: ricava dal testo "N - ..."
+                                txt = combo.currentText()
+                                try:
+                                    val = int(str(txt).split("-")[0].strip())
+                                except Exception:
+                                    # estrema sicurezza: usa l'indice 0/1/2
+                                    val = int(combo.currentIndex())
+                            else:
+                                val = int(data)
 
-                    # 🔹 Se la scheda è "Prassie BLF" ed è tutta "/" → considerala vuota
-                    if scheda_nome == "Prassie BLF" and all(v == "/" for v in valori_combo):
-                        continue  # ⛔ salta questa scheda, non la aggiunge al report
+                            combos_payload.append({
+                                "valore": val,
+                                "descrizione": combo.currentText()
+                            })
 
-                    scheda_dati["combos"] = valori_combo
+                        # se TUTTI i valori sono 0, consideriamo la scheda "vuota" e la saltiamo
+                        if combos_payload and all(item["valore"] == 0 for item in combos_payload):
+                            continue
+
+                        scheda_dati["combos"] = combos_payload
+
+                    else:
+                        # altre schede: comportamento identico a prima
+                        valori_combo = [combo.currentText() for combo in tab.combos]
+                        scheda_dati["combos"] = valori_combo
 
                 if hasattr(tab, "lines"):
                     scheda_dati["lines"] = [line.text() for line in tab.lines]
@@ -958,14 +1035,31 @@ class SchedeValutazioneWindow(QWidget):
                 scheda_nome = self.tab_widget.tabText(idx)
                 tab = self.tab_forms[idx]
                 scheda_dati = {"nome": scheda_nome}
+                                
                 if hasattr(tab, "combos"):
-                    valori_combo = [combo.currentText() for combo in tab.combos]
+                    if scheda_nome == "Prassie BLF":
+                        combos_payload = []
+                        for combo in tab.combos:
+                            data = combo.currentData()
+                            if data is None:
+                                txt = combo.currentText()
+                                try:
+                                    val = int(str(txt).split("-")[0].strip())
+                                except Exception:
+                                    val = int(combo.currentIndex())
+                            else:
+                                val = int(data)
+                            combos_payload.append({
+                                "valore": val,
+                                "descrizione": combo.currentText()
+                            })
+                        if combos_payload and all(item["valore"] == 0 for item in combos_payload):
+                            continue
+                        scheda_dati["combos"] = combos_payload
+                    else:
+                        valori_combo = [combo.currentText() for combo in tab.combos]
+                        scheda_dati["combos"] = valori_combo
 
-                    # 🔹 Caso speciale: Prassie BLF tutta "/" → scheda vuota
-                    if scheda_nome == "Prassie BLF" and all((v or "").strip() == "" for v in valori_combo):
-                        continue
-
-                    scheda_dati["combos"] = valori_combo
 
                 if hasattr(tab, "lines"):
                     scheda_dati["lines"] = [line.text() for line in tab.lines]
@@ -1011,9 +1105,41 @@ class SchedeValutazioneWindow(QWidget):
                     tab = self.tab_forms[tab_idx]
        
                     if hasattr(tab, "combos") and "combos" in scheda and tab.combos is not None:
-                        for combo, value in zip(tab.combos, scheda["combos"]):
-                            idx_value = combo.findText(value)
-                            combo.setCurrentIndex(idx_value if idx_value >= 0 else 0)
+                        if scheda["nome"] == "Prassie BLF":
+                            for combo, value in zip(tab.combos, scheda["combos"]):
+                                # --- Estrai il valore numerico dal dict o dalla stringa ---
+                                if isinstance(value, dict):
+                                    val = int(value.get("valore", 0))
+                                else:
+                                    try:
+                                        val = int(str(value).split("-")[0].strip())
+                                    except Exception:
+                                        val = 0
+
+                                # --- Cerca l'indice confrontando la parte numerica di ciascun item ---
+                                idx = 0
+                                for i in range(combo.count()):
+                                    text_item = combo.itemText(i)
+                                    try:
+                                        num_item = int(str(text_item).split("-")[0].strip())
+                                    except Exception:
+                                        num_item = -1
+                                    if num_item == val:
+                                        idx = i
+                                        break
+                                combo.setCurrentIndex(idx)
+
+                        else:
+                            # tutte le altre schede come prima
+                            for combo, value in zip(tab.combos, scheda["combos"]):
+                                if isinstance(value, dict):
+                                    text_val = value.get("descrizione", "")
+                                else:
+                                    text_val = str(value)
+                                idx_value = combo.findText(text_val)
+                                combo.setCurrentIndex(idx_value if idx_value >= 0 else 0)
+
+
 
                     if hasattr(tab, "lines") and "lines" in scheda and tab.lines is not None:
                         for line, value in zip(tab.lines, scheda["lines"]):
@@ -1050,10 +1176,27 @@ class SchedeValutazioneWindow(QWidget):
                 scheda = by_name.get(nome_tab)
 
                 # 🔹 Prassie BLF: se tutte le combo sono vuote -> considerala non compilata
+               # 🔹 Prassie BLF: se tutte le combo hanno valore 0 -> considerala non compilata
                 if nome_tab == "Prassie BLF" and scheda:
                     combos = scheda.get("combos", [])
-                    if combos and all((v or "").strip() == "" for v in combos):
+
+                    def _estrai_val(x):
+                        if isinstance(x, dict):
+                            try:
+                                return int(x.get("valore", 0))
+                            except Exception:
+                                return 0
+                        elif isinstance(x, str):
+                            try:
+                                return int(x.split("-")[0].strip())
+                            except Exception:
+                                return 0
+                        else:
+                            return 0
+
+                    if combos and all(_estrai_val(v) == 0 for v in combos):
                         scheda = None
+
 
                 cb.setChecked(bool(scheda) and self._scheda_ha_dati(scheda))
 
@@ -1271,11 +1414,7 @@ class SchedeValutazioneWindow(QWidget):
             "Elevazione laringe descrizione"
         ]
 
-        labels_prassie = [
-            "Mostrare la lingua", "Fischio", "Sbadigliare", "Toccarsi il naso con la lingua",
-            "Fare una pernacchia", "Dare un bacio", "Battere i denti", "Fare il galoppo con la lingua",
-            "Soffiare", "Schiarirsi la gola"
-        ]
+        labels_prassie = PRASSIE_VOCI[:]  
 
         labels_pasto = [
             "Livelli di vigilanza", "Consistenza(IDDSI)", "Autonomo", "Rifiuta cibo", "Modalità assunzione",
@@ -1343,8 +1482,25 @@ class SchedeValutazioneWindow(QWidget):
                 # 🔹 Se PRASSIE BLF e TUTTE le voci sono "0" o vuote → salta
                 if nome_tab == "Prassie BLF":
                     vals = s.get("combos", [])
-                    # se tutte le combo sono vuote (""), la scheda è saltata
-                    if vals and all(v.strip() == "" for v in vals):
+
+                    def _estrai_val(x):
+                        # nuovo formato: {"valore": int, "descrizione": str}
+                        if isinstance(x, dict):
+                            try:
+                                return int(x.get("valore", 0))
+                            except Exception:
+                                return 0
+                        # vecchio formato: "1 - ..." o "1"
+                        elif isinstance(x, str):
+                            try:
+                                return int(x.split("-")[0].strip())
+                            except Exception:
+                                return 0
+                        else:
+                            return 0
+
+                    # salta solo se TUTTI i valori sono zero
+                    if vals and all(_estrai_val(v) == 0 for v in vals):
                         continue
 
 
@@ -1434,11 +1590,16 @@ class SchedeValutazioneWindow(QWidget):
                 # --- PRASSIE BLF ---
                 elif nome_scheda == "Prassie BLF":
                     combos = scheda.get("combos", [])
-                    for lbl, val in zip(labels_prassie, combos):
-                        if val and val.strip():
+                    for lbl, item in zip(labels_prassie, combos):
+                        if isinstance(item, dict):
+                            txt = item.get("descrizione", "")
+                        else:
+                            txt = str(item)
+                        if txt and txt.strip():
                             c.setFont("Helvetica", 10)
-                            c.drawString(margin + 1*cm, y, f"{lbl}: {val}")
+                            c.drawString(margin + 1*cm, y, f"{lbl}: {txt}")
                             y -= 0.5 * cm
+
                     punteggio = scheda.get("punteggio", "")
                     if punteggio:
                         c.setFont("Helvetica", 10)
@@ -1735,24 +1896,50 @@ class SchedeValutazioneWindow(QWidget):
                 for idx, campo in enumerate(labels):
                     if idx >= len(combos):
                         continue
+
                     valore = combos[idx]
                     if not valore:
                         continue
+
+                    # --- Estrai descrizione e valore numerico ---
+                    if isinstance(valore, dict):
+                        val_num = valore.get("valore", 0)
+                        val_descr = valore.get("descrizione", "").strip()
+                    else:
+                        try:
+                            val_num = int(str(valore).split("-")[0].strip())
+                        except Exception:
+                            val_num = 0
+                        val_descr = str(valore).strip()
+
                     voci_rules = regole_scheda.get(campo)
                     if not voci_rules:
                         continue
+
+                    # 🔹 Confronto flessibile: prima per descrizione, poi per valore numerico
+                    trovato = False
                     for voce_attesa, regola in voci_rules.items():
-                        # confronto case-insensitive e senza spazi
-                        if str(valore).strip().lower() == str(voce_attesa).strip().lower():
+                        voce_attesa_norm = str(voce_attesa).strip().lower()
+
+                        # Confronto per testo (descrizione)
+                        if val_descr.lower() == voce_attesa_norm:
+                            trovato = True
+                        # Oppure se il numero coincide con la chiave numerica
+                        elif str(val_num) == voce_attesa_norm:
+                            trovato = True
+
+                        if trovato:
                             criticita = regola.get("criticita", "").lower()
                             if criticita == "critico":
                                 trovati.append({
                                     "scheda": nome_json,
                                     "campo": campo,
-                                    "voce": valore,
+                                    "voce": val_descr or str(val_num),
                                     "gravita": regola.get("gravita", ""),
-                                    "messaggio": regola.get("messaggio", valore)
+                                    "messaggio": regola.get("messaggio", val_descr or str(val_num))
                                 })
+                            break
+
             return trovati
 
         # estrai criticità
