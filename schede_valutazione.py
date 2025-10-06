@@ -1478,7 +1478,7 @@ class SchedeValutazioneWindow(QWidget):
         ]
 
         labels_conclusioni = [
-            "Disfagia", "Scala DDOS", "Consistenza liquidi suggerita", "Modalità assunzione liquidi suggerita",
+            "Disfagia", "Scala DOSS", "Consistenza liquidi suggerita", "Modalità assunzione liquidi suggerita",
             "Consistenza alimenti suggerita", "Modalità somministrazione farmaci"
         ]
 
@@ -1501,13 +1501,25 @@ class SchedeValutazioneWindow(QWidget):
 
             # intestazione
             c.setFont("Helvetica-Bold", 14)
-            c.drawString(margin, y, f"Report completo - {parent.nome} {parent.cognome}")
+            c.drawString(margin, y, f"Report completo - {parent.nome} {parent.cognome}")       
             y -= 1 * cm
             c.setFont("Helvetica", 10)
             c.drawString(margin, y, f"Data valutazione: {data_valutazione}")
             y -= 0.5 * cm
             c.drawString(margin, y, f"Data creazione: {data_creazione}")
             y -= 1 * cm
+
+            # --- Funzione helper per voce in grassetto + valore normale ---
+            def _draw_label_value(ypos, lbl, val, size=10, xoff=1*cm):
+                """Stampa 'lbl:' in bold e 'val' in regular."""
+                c.setFont("Helvetica-Bold", size)
+                c.drawString(margin + xoff, ypos, f"{lbl}:")
+                w = c.stringWidth(f"{lbl}:", "Helvetica-Bold", size)
+                w = c.stringWidth(f"{lbl}:", "Helvetica-Bold", size)
+                c.setFont("Helvetica", size)
+                # Piccolo spazio più generoso tra etichetta e valore
+                c.drawString(margin + xoff + w + 4, ypos, str(val))
+
 
             # --- CONTENUTO SCHEDE ---
     # Costruisci l’elenco di schede da stampare in base alle spunte
@@ -1577,8 +1589,7 @@ class SchedeValutazioneWindow(QWidget):
                     combos = scheda.get("combos", [])
                     for lbl, val in zip(labels_anamnesi, combos):
                         if val and val.strip():
-                            c.setFont("Helvetica", 10)
-                            c.drawString(margin + 1*cm, y, f"{lbl}: {val}")
+                            _draw_label_value(y, lbl, val)
                             y -= 0.5 * cm
                     note = scheda.get("note", "")
                     if note and note.strip():
@@ -1592,8 +1603,7 @@ class SchedeValutazioneWindow(QWidget):
                     combos = scheda.get("combos", [])
                     for lbl, val in zip(labels_osservazione, combos):
                         if val and val.strip():
-                            c.setFont("Helvetica", 10)
-                            c.drawString(margin + 1*cm, y, f"{lbl}: {val}")
+                            _draw_label_value(y, lbl, val)
                             y -= 0.5 * cm
                     # Descrizioni specifiche
                     descr = scheda.get("descrizioni", {})
@@ -1615,8 +1625,7 @@ class SchedeValutazioneWindow(QWidget):
                     combos = scheda.get("combos", [])
                     for lbl, val in zip(labels_morfodinamica, combos):
                         if val and val.strip():
-                            c.setFont("Helvetica", 10)
-                            c.drawString(margin + 1*cm, y, f"{lbl}: {val}")
+                            _draw_label_value(y, lbl, val)
                             y -= 0.5 * cm
                     descr = scheda.get("descrizioni", {})
                     for k in descr_morfodinamica:
@@ -1641,8 +1650,7 @@ class SchedeValutazioneWindow(QWidget):
                         else:
                             txt = str(item)
                         if txt and txt.strip():
-                            c.setFont("Helvetica", 10)
-                            c.drawString(margin + 1*cm, y, f"{lbl}: {txt}")
+                            _draw_label_value(y, lbl, txt)
                             y -= 0.5 * cm
 
                     punteggio = scheda.get("punteggio", "")
@@ -1662,9 +1670,7 @@ class SchedeValutazioneWindow(QWidget):
                     combos = scheda.get("combos", [])
                     for lbl, val in zip(labels_pasto, combos):
                         if val and val.strip():
-                            c.setFont("Helvetica", 10)
-                            c.drawString(margin + 1*cm, y, f"{lbl}: {val}")
-                            y -= 0.5 * cm
+                            _draw_label_value(y, lbl, val)
                     # Descrizioni aggiuntive se presenti (non tutte le tab hanno)
                     desc_lineedits = scheda.get("lines", [])
                     for idx, val in enumerate(desc_lineedits):
@@ -1688,8 +1694,7 @@ class SchedeValutazioneWindow(QWidget):
                     combos = scheda.get("combos", [])
                     for lbl, val in zip(labels_gets, combos):
                         if val and val.strip() and val != "0":
-                            c.setFont("Helvetica", 10)
-                            c.drawString(margin + 1*cm, y, f"{lbl}: {val}")
+                            _draw_label_value(y, lbl, val)
                             y -= 0.5 * cm
                     note = scheda.get("note", "")
                     if note and note.strip():
@@ -1703,9 +1708,7 @@ class SchedeValutazioneWindow(QWidget):
                     combos = scheda.get("combos", [])
                     for lbl, val in zip(labels_conclusioni, combos):
                         if val and val.strip():
-                            c.setFont("Helvetica", 10)
-                            c.drawString(margin + 1*cm, y, f"{lbl}: {val}")
-                            y -= 0.5 * cm
+                            _draw_label_value(y, lbl, val)
                     note = scheda.get("note", "")
                     if note and note.strip():
                         c.setFont("Helvetica", 9)
@@ -1732,9 +1735,18 @@ class SchedeValutazioneWindow(QWidget):
             c.setFont("Helvetica", 11)
             y -= 1.5 * cm
             c.drawString(margin, y, "Logopedista: _______________________________")
+           
+            # --- Footer con firma del programma ---
+            c.setFont("Helvetica-Oblique", 8)
+            c.setFillGray(0.5)  # testo grigio tenue
+            footer_text = "Generato con Franca Dys © 2026"
+            text_width = c.stringWidth(footer_text, "Helvetica-Oblique", 8)
+            c.drawString(width - text_width - margin, margin / 2, footer_text)
+            c.setFillGray(0)  # ripristina colore testo normale
 
             c.showPage()
             c.save()
+
         except Exception as e:
             QMessageBox.critical(self, "Errore PDF", str(e))
             return
@@ -2030,15 +2042,25 @@ class SchedeValutazioneWindow(QWidget):
                     c.drawString(margin, y, nome_sezione)
                     y -= 0.6 * cm
                     for item in items:
+                        campo = item.get("campo", "")
+                        messaggio = item.get("messaggio", "")
+                        gravita = item.get("gravita", "")
+
+                        # campo in grassetto
+                        c.setFont("Helvetica-Bold", 10)
+                        c.drawString(margin + 1*cm, y, campo + ":")
+                        w = c.stringWidth(campo + ":", "Helvetica-Bold", 10)
+
+                        # valore e gravità in regolare
                         c.setFont("Helvetica", 10)
-                        # Solo campo, gravità se presente, messaggio
-                        parts = [item["campo"]]
-                        if item.get("gravita"):
-                            parts.append(f"Gravità: {item['gravita']}")
-                        parts.append(item["messaggio"])
-                        line = " | ".join(parts)
-                        c.drawString(margin + 1*cm, y, line)
+                        testo_val = messaggio
+                        if gravita:
+                            testo_val += f"  (Gravità: {gravita})"
+
+                        c.drawString(margin + 1*cm + w + 8, y, testo_val)
                         y -= 0.8 * cm
+
+
                     y -= 0.3 * cm  # Spazio extra tra sezioni
             else:
                 c.setFont("Helvetica", 11)
@@ -2049,6 +2071,17 @@ class SchedeValutazioneWindow(QWidget):
             y -= 2 * cm
             c.setFont("Helvetica", 11)
             c.drawString(margin, y, "Logopedista: _______________________________")
+
+            # --- Footer con firma del programma ---
+            c.setFont("Helvetica-Oblique", 8)
+            c.setFillGray(0.5)  # testo grigio tenue
+            footer_text = "Generato con Franca Dys © 2026"
+            text_width = c.stringWidth(footer_text, "Helvetica-Oblique", 8)
+            c.drawString(width - text_width - margin, margin / 2, footer_text)
+            c.setFillGray(0)  # ripristina colore testo normale
+
+            c.showPage()
+            c.save()
 
             c.showPage()
             c.save()
