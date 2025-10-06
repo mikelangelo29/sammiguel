@@ -2083,8 +2083,6 @@ class SchedeValutazioneWindow(QWidget):
             c.showPage()
             c.save()
 
-            c.showPage()
-            c.save()
         except Exception as e:
             QMessageBox.critical(self, "Errore PDF", str(e))
             return
