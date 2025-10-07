@@ -229,8 +229,18 @@ class PazientiAttiviWindow(QWidget):
         self.window_dimessi.show()
 
     def aggiorna_tabella(self):
+        # 🔹 ordina i pazienti per data di ricovero (dal più recente al più vecchio)
+        def parse_data_ricovero(p):
+            try:
+                return datetime.strptime(p.get("data_ricovero", ""), "%d/%m/%Y")
+            except ValueError:
+                return datetime.min  # in caso di data mancante o invalida
+
+        self.dati.sort(key=parse_data_ricovero, reverse=True)
+
+        # 🔹 aggiorna tabella
         self.table.setRowCount(len(self.dati))
-        self.table.setColumnCount(5)  # 🔹 assicurati che siano 5 colonne (4 dati + 1 pulsante)
+        self.table.setColumnCount(5)
 
         for riga, paziente in enumerate(self.dati):
             nome = paziente.get("nome", "")
@@ -243,7 +253,6 @@ class PazientiAttiviWindow(QWidget):
                 item.setTextAlignment(Qt.AlignCenter)
                 self.table.setItem(riga, i, item)
 
-            # 🔹 crea pulsante e assegnalo alla colonna 4
             btn = QPushButton("Scheda")
             btn.setFixedWidth(100)
             btn.setFixedHeight(25)
@@ -254,9 +263,7 @@ class PazientiAttiviWindow(QWidget):
                     color: white;
                     border-radius: 4px;
                 }
-                QPushButton:hover {
-                    background-color: #546E7A;
-                }
+                QPushButton:hover { background-color: #546E7A; }
                 QPushButton:pressed {
                     background-color: #37474F;
                     padding-top: 2px;
@@ -264,11 +271,9 @@ class PazientiAttiviWindow(QWidget):
                 }
             """)
             btn.setFocusPolicy(Qt.NoFocus)
-
-            # 🔹 collega evento al paziente giusto
             btn.clicked.connect(partial(self.apri_scheda, riga))
+            self.table.setCellWidget(riga, 4, btn)
 
-            self.table.setCellWidget(riga, 4, btn)  # <-- questa riga era quella mancante
 
 
     def nuovo_paziente(self):
