@@ -7,11 +7,17 @@ import sys
 
 from pazienti_attivi import PazientiAttiviWindow
 from pazienti_dimessi import PazientiDimessiWindow
+import licenza
+
 
 class HomeFranca(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Franca – Home")
+
+        import licenza
+        print(">>> DEBUG dentro HomeFranca: licenza_valida =", licenza.licenza_valida)
+
+        self.setWindowTitle("Franca Dys– Home")
 
         # 🔹 Finestra fissa e centrata
         self.setFixedSize(650, 520)
@@ -61,6 +67,29 @@ class HomeFranca(QWidget):
         """)
         label_sub.setAlignment(Qt.AlignCenter)
         layout.addWidget(label_sub)
+
+        # --- Etichetta versione (demo o full) ---
+        import licenza
+
+        self.label_versione = QLabel()
+        self.label_versione.setAlignment(Qt.AlignCenter)
+        self.label_versione.setStyleSheet("font-size: 14px; font-weight: bold; margin-top: 10px;")
+
+        if licenza.licenza_valida:
+            self.label_versione.setText("🟢 Versione completa – Licenza attiva")
+            self.label_versione.setStyleSheet(
+                "color: green; font-size: 14px; font-weight: bold; margin-top: 10px;"
+            )
+        else:
+            giorni = licenza.giorni_rimasti()
+            giorni_txt = f"{giorni} giorni rimanenti" if giorni is not None else "Periodo di prova attivo"
+            self.label_versione.setText(f"🟡 Versione demo – {giorni_txt}")
+            self.label_versione.setStyleSheet(
+                "color: orange; font-size: 14px; font-weight: bold; margin-top: 10px;"
+            )
+
+        layout.addWidget(self.label_versione)
+
 
         layout.addSpacing(40)
 
@@ -154,9 +183,19 @@ class HomeFranca(QWidget):
     def open_dimessi(self):
         self.dimessi_window = PazientiDimessiWindow()
         self.dimessi_window.show()
-
+        
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    import licenza
+
+    licenza.check_licenza()
+
     win = HomeFranca()
     win.show()
+
+    print("DEBUG → stato finale licenza_valida:", licenza.licenza_valida)
     sys.exit(app.exec_())
+
+
+
+
