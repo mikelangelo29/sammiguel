@@ -3,7 +3,7 @@ import json
 import hashlib
 from pathlib import Path
 from PyQt5.QtWidgets import (
-    QWidget, QVBoxLayout, QPushButton, QLabel, QFileDialog, QMessageBox
+    QWidget, QVBoxLayout, QPushButton, QLabel, QFileDialog, QMessageBox, QSizePolicy
 )
 from PyQt5.QtCore import Qt
 from licenza import APPDATA_PATH, LIC_FILE, DEMO_MODE
@@ -17,8 +17,8 @@ class FinestraAttivazione(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Attivazione Franca Dys")
-        self.setFixedWidth(460)
-        self.setFixedHeight(360)
+        self.setFixedWidth(800)
+        self.setFixedHeight(600)
         self.setStyleSheet("font-size: 12pt;")
 
         # --- Layout principale con margini più ampi e spaziatura equilibrata ---
@@ -50,20 +50,34 @@ class FinestraAttivazione(QWidget):
         layout.addWidget(btn_carica)
 
         # Info
+        # Info con pagamento
+        # --- Sezione pagamento elegante ---
+               # --- Sezione pagamento elegante ---
+        from licenza import PREZZO_LICENZA, IBAN, PAYPAL_LINK, SUPPORT_EMAIL  # valori già definiti in licenza.py
+
         self.lbl_info = QLabel()
-        self.lbl_info.setTextFormat(Qt.RichText)  # <-- abilita HTML (serve per <b>, <br>, ecc.)
+        self.lbl_info.setTextFormat(Qt.RichText)
         self.lbl_info.setAlignment(Qt.AlignCenter)
         self.lbl_info.setWordWrap(True)
+
         self.lbl_info.setText(
-            "Invia il codice macchina e la ricevuta di pagamento a:<br>"
-            "<b>📧 francadys.supporto@gmail.com</b><br><br>"
-            "Riceverai il file di licenza personalizzato<br>"
-            "per attivare la versione completa di <b>Franca Dys</b>."
+            f"""
+            <b>Attivazione della licenza completa di Franca Dys</b><br><br>
+            Prezzo licenza singola: <b>{PREZZO_LICENZA},00 €</b><br><br>
+            <b>Cosa devi fare:</b><br>
+            1) Clicca <i>“Genera codice macchina”</i> (si salva un file sul Desktop).<br>
+            2) Effettua il pagamento su:<br>
+            &nbsp;&nbsp;• <b>IBAN:</b> {IBAN}<br>
+            &nbsp;&nbsp;• <b>PayPal:</b> {PAYPAL_LINK}<br>
+            3) Invia <b>codice macchina + ricevuta</b> a: <b>{SUPPORT_EMAIL}</b><br><br>
+            Riceverai il file di licenza personalizzato da caricare con<br>
+            <i>“Inserisci file di licenza”</i>.
+            """
         )
 
-        self.lbl_info.setAlignment(Qt.AlignCenter)
-        self.lbl_info.setWordWrap(True)
         layout.addWidget(self.lbl_info)
+
+
 
         self.setLayout(layout)
 

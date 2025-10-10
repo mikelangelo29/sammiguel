@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QLabel, QPushButton, QHBoxLayout, QMessageBox
+    QApplication, QWidget, QVBoxLayout, QLabel, QPushButton, QHBoxLayout, QMessageBox, 
 )
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt
@@ -36,7 +36,9 @@ class HomeFranca(QWidget):
         logo_layout.setAlignment(Qt.AlignCenter)
 
         logo_frame = QLabel()
-        pixmap = QPixmap("logo_franca.png")
+        from config import res_path
+        pixmap = QPixmap(res_path("logo_franca.png"))
+
         pixmap = pixmap.scaled(170, 170, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         logo_frame.setPixmap(pixmap)
         logo_frame.setAlignment(Qt.AlignCenter)
@@ -133,9 +135,40 @@ class HomeFranca(QWidget):
 
         layout.addSpacing(30)
 
-        # --- Pulsante Copyright (ridotto al 50%) ---
-# Pulsante copyright con sfondo arancione sfumato (più piccolo)
+        # --- Pulsanti Guida e Copyright allineati ---
+        bottom_layout = QHBoxLayout()
+        bottom_layout.setContentsMargins(40, 10, 40, 10)
+        bottom_layout.setSpacing(0)
+
+        # Pulsante Guida
+        btn_guida = QPushButton("Guida")
+        btn_guida.clicked.connect(self.open_guide)
+        btn_guida.setStyleSheet("""
+            QPushButton {
+                background-color: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:1,
+                    stop:0 #ffe7cc, stop:1 #fff8f0
+                );
+                color: #6b2f00;
+                border: 1px solid #f4a261;
+                border-radius: 8px;
+                padding: 4px 10px;
+                font-size: 11px;
+                font-weight: 500;
+                min-width: 90px;
+            }
+            QPushButton:hover {
+                background-color: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:1,
+                    stop:0 #ffd9b0, stop:1 #fff1e1
+                );
+                border-color: #e76f51;
+            }
+        """)
+
+        # Pulsante Copyright
         btn_copyright = QPushButton("© 2025 Franca Dys")
+        btn_copyright.clicked.connect(self.show_copyright)
         btn_copyright.setStyleSheet("""
             QPushButton {
                 background-color: qlineargradient(
@@ -158,9 +191,11 @@ class HomeFranca(QWidget):
                 border-color: #e76f51;
             }
         """)
-        btn_copyright.clicked.connect(self.show_copyright)
-        layout.addWidget(btn_copyright, alignment=Qt.AlignRight)
 
+        bottom_layout.addWidget(btn_guida, alignment=Qt.AlignLeft)
+        bottom_layout.addStretch()
+        bottom_layout.addWidget(btn_copyright, alignment=Qt.AlignRight)
+        layout.addLayout(bottom_layout)
 
 
         # --- Finestre figlie (logica invariata) ---
@@ -175,6 +210,26 @@ class HomeFranca(QWidget):
             "Copyright",
             "© 2026 Dr. Michelangelo Zanelli\n \n Logopedista \n Dottore in Scienze della Comunicazione\n \nmichelangelozanelli@gmail.com\n \n ®Tutti i diritti riservati."
         )
+
+    def open_guide(self):
+        import os
+        from PyQt5.QtWidgets import QMessageBox
+        from config import res_path
+
+        pdf_path = res_path("guida.pdf")
+
+        if os.path.exists(pdf_path):
+            try:
+                os.startfile(pdf_path)  # apre con il lettore PDF predefinito
+            except Exception as e:
+                QMessageBox.warning(self, "Errore apertura", f"Impossibile aprire la guida:\n{e}")
+        else:
+            QMessageBox.warning(
+                self, "File mancante",
+                "Il file 'guida.pdf' non è stato trovato tra le risorse del programma."
+            )
+
+   
 
     def open_attivi(self):
         self.attivi_window = PazientiAttiviWindow()

@@ -1785,7 +1785,9 @@ class SchedeValutazioneWindow(QWidget):
 
         # carica regole critiche
         try:
-            with open("config/indici_rules.json", "r", encoding="utf-8") as f:
+            from config import res_path
+            with open(res_path("config", "indici_rules.json"), "r", encoding="utf-8") as f:
+
                 rules = json.load(f)
         except Exception as e:
             QMessageBox.critical(self, "Errore", f"Impossibile caricare le regole degli indici critici:\n{e}")

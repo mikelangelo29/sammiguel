@@ -1,5 +1,12 @@
 import os
 from pathlib import Path
+import sys, os
+from pathlib import Path
+
+def res_path(*parts):
+    """Percorso compatibile per risorse statiche (sviluppo + eseguibile PyInstaller)."""
+    base = getattr(sys, "_MEIPASS", os.path.abspath("."))
+    return os.path.join(base, *parts)
 
 APP_NAME = "Franca"
 

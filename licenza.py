@@ -24,7 +24,7 @@ APP_NAME = "Franca Dys"
 # 📧 Dati contatto e pagamento
 SUPPORT_EMAIL = "francadys.supporto@gmail.com"
 PREZZO_LICENZA = "Licenza singola: €59 iva inclusa -una tantum"
-IBAN = "IT00X000000000000000000000"               # ⬅️ Inserisci il tuo IBAN reale
+IBAN = "IT00X000000000000000000001"               # ⬅️ Inserisci il tuo IBAN reale
 PAYPAL_LINK = "https://paypal.me/tuolinkpaypal"   # ⬅️ Inserisci il tuo link PayPal (facoltativo)
 
 # Percorsi locali (AppData + Registro)
