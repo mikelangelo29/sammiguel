@@ -11,6 +11,9 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt
 import hashlib
+import stat, subprocess
+DEV_MODE = False   # True = sviluppo (file visibile e scrivibile). Metti False in produzione.
+
 
 licenza_valida = False
 
@@ -62,6 +65,27 @@ def calc_hwid():
     """Genera un codice macchina unico e stabile."""
     base = str(uuid.getnode())
     return "-".join([base[i:i + 4] for i in range(0, len(base), 4)])
+
+import time
+def _hide_and_lock_file_windows(path, readonly=True, hide=True, force_dev=False):
+    """Nasconde (+h) e rende sola-lettura (+r) un file su Windows.
+       In DEV_MODE non fa nulla."""
+    try:
+        if force_dev:
+            return  # In sviluppo non si blocca niente
+
+        path = str(Path(path).resolve())
+        if not os.path.exists(path):
+            print("DEBUG: file non trovato:", path)
+            return
+
+        time.sleep(0.3)  # attesa per sicurezza
+
+        if sys.platform == "win32":
+            subprocess.run(f'attrib +h +r "{path}"', shell=True)
+            print(f"DEBUG: nascosto e bloccato {path}")
+    except Exception as e:
+        print("DEBUG: errore in _hide_and_lock_file_windows:", e)
 
 
 # ==============================================================
@@ -183,6 +207,7 @@ class FinestraLicenza(QDialog):
             dest = APPDATA_PATH / "license_full.json"
             with open(dest, "w", encoding="utf-8") as out:
                 json.dump(lic, out, indent=2)
+            _hide_and_lock_file_windows(dest, readonly=True, hide=True, force_dev=DEV_MODE)
 
             QMessageBox.information(
                 self, "Licenza inserita",
@@ -245,6 +270,8 @@ def check_licenza():
                             if not copia_destinazione.exists():
                                 shutil.copy(percorso, copia_destinazione)
                                 print(f"DEBUG: licenza copiata in AppData -> {copia_destinazione}")
+                            _hide_and_lock_file_windows(copia_destinazione, readonly=True, hide=True, force_dev=DEV_MODE)
+
                         except Exception as e:
                             print(f"DEBUG: errore nel salvataggio della licenza in AppData: {e}")
 
@@ -279,6 +306,7 @@ def check_licenza():
             data_inizio = oggi
             with open(LIC_FILE, "w", encoding="utf-8") as f:
                 json.dump({"data": data_inizio.isoformat()}, f)
+            _hide_and_lock_file_windows(LIC_FILE, readonly=True, hide=True, force_dev=DEV_MODE)
             print("DEBUG: creato nuovo file demo:", LIC_FILE)
 
         # --- Calcolo giorni rimanenti ---
