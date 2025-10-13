@@ -1,9 +1,10 @@
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QTabWidget, QFormLayout, QLineEdit, QComboBox, QGridLayout, 
-    QSpinBox, QHBoxLayout, QPushButton, QGroupBox, QTextEdit, QCheckBox, QLabel, QSizePolicy, QMessageBox, QScrollArea
+    QSpinBox, QHBoxLayout, QPushButton, QGroupBox, QTextEdit, QCheckBox, QLabel, QSizePolicy, QMessageBox, QScrollArea, QStyle
 )
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import QStylePainter, QStyleOptionTab, QTabBar
 from datetime import datetime
 
 # === Costanti globali per le prassie bucco-linguo-facciali ===
@@ -31,10 +32,28 @@ PRASSIE_MAPPA_DESCRIZIONI = {
     2: "2 - risposta immediata e adeguata al comando"
 }
 
+class FixedTabBar(QTabBar):
+    """Corregge il taglio della prima lettera nei tab selezionati (bug Qt5-Windows)."""
+    def paintEvent(self, event):
+        painter = QStylePainter(self)
+        opt = QStyleOptionTab()
+        for i in range(self.count()):
+            self.initStyleOption(opt, i)
+            # Sposta di 2 pixel a destra SOLO il tab attivo
+            if opt.state & QStyle.State_Selected:
+                opt.rect.adjust(2, 0, 0, 0)
+            painter.drawControl(QStyle.CE_TabBarTabShape, opt)
+            painter.drawControl(QStyle.CE_TabBarTabLabel, opt)
+
+
+
 class SchedeValutazioneWindow(QWidget):
     def __init__(self, nome, cognome, eta, callback_salva=None, valutazione_precaricata=None, indice_valutazione=None):
         super().__init__()
-        self.resize(1200, 800)      # 👈 apre la finestra un po’ più larga e alta
+        # 🔧 Fix per il taglio della prima lettera nei tab: stile Fusion solo qui
+        from PyQt5.QtWidgets import QStyleFactory
+        self.setStyle(QStyleFactory.create("Fusion"))
+        self.resize(1300, 800)      # 👈 apre la finestra un po’ più larga e alta
         self.setMinimumSize(1100, 700)
         self.setWindowTitle(f"Valutazione Disfagia - {nome} {cognome}")
         self.setMinimumSize(1024, 700)
@@ -113,47 +132,35 @@ class SchedeValutazioneWindow(QWidget):
         layout.addLayout(salva_layout)
 
         self.tab_widget = QTabWidget(self)
-        # --- Stile dei tab con bordo colorato per sezione ---
+        self.tab_widget.tabBar().setElideMode(Qt.ElideNone) 
+
         self.tab_widget.setStyleSheet("""
-                QTabBar::tab {
-                    background: #ffffff;
-                    border: 2px solid #90a4c2;
-                    padding: 6px 14px;
-                    margin-right: 2px;
-                    margin-left: 2px;
-                    border-top-left-radius: 8px;
-                    border-top-right-radius: 8px;
-                    transition: all 0.2s ease-in-out;
-                    min-width: 90px;
-                    text-align: center;
-                }
+            /* Tutti i tab (normali) */
+            QTabBar::tab {
+                background: #ffffff;
+                border: 2px solid #90a4c2;
+                padding: 6px 14px;
+                margin-right: 2px;
+                margin-left: 2px;
+                border-top-left-radius: 8px;
+                border-top-right-radius: 8px;
+                min-width: 90px;
+                text-align: center;
+                color: #000000;
+            }
 
-                /* 💡 Patch per impedire il “taglio” della prima lettera */
-                QTabBar::tab:selected {
-                    background: #f5f9fc;
-                    border: 2px solid #1d4e89;
-                    font-weight: bold;
-                    color: #1d4e89;
-                    padding-left: 16px;     /* 👈 forziamo più spazio interno a sinistra */
-                    padding-right: 16px;    /* 👈 simmetria per mantenere centrato */
-                    margin-left: 0px;       /* 👈 evita shift laterale */
-                    margin-right: 0px;
-                }
+            /* Tab selezionato - solo cambio colore, senza ridisegno */
+            QTabBar::tab:selected:!hover {
+                background-color: #d9e7ff;   /* azzurrino leggerissimo */
+                color: #0d47a1;               /* testo blu ma stabile */
+                border-color: #90a4c2;        /* stesso bordo per non ricreare il rettangolo */
+            }
 
-
-
-            /* Colori personalizzati per i bordi */
-            QTabBar::tab:nth-child(1) { border-color: #2a9d8f; }  /* Anamnesi */
-            QTabBar::tab:nth-child(2) { border-color: #457b9d; }  /* Osservazione */
-            QTabBar::tab:nth-child(3) { border-color: #8d99ae; }  /* Morfodinamica */
-            QTabBar::tab:nth-child(4) { border-color: #e76f51; }  /* Prassie BLF */
-            QTabBar::tab:nth-child(5) { border-color: #f4a261; }  /* Bedside */
-            QTabBar::tab:nth-child(6) { border-color: #2a9d8f; }  /* Osservazione Pasto */
-            QTabBar::tab:nth-child(7) { border-color: #219ebc; }  /* GETS */
-            QTabBar::tab:nth-child(8) { border-color: #1d3557; }  /* Conclusioni */
+            /* Tab al passaggio del mouse - effetto leggero */
+            QTabBar::tab:hover {
+                background-color: #f2f7ff;
+            }
         """)
-
-
 
 
         layout.addWidget(self.tab_widget)

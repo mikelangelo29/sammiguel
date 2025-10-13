@@ -1,3 +1,4 @@
+
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QLabel, QPushButton, QHBoxLayout, QMessageBox,QSizePolicy
 )
@@ -240,6 +241,14 @@ class HomeFranca(QWidget):
         self.dimessi_window.show()
         
 if __name__ == "__main__":
+
+    from PyQt5.QtCore import Qt
+    from PyQt5 import QtWidgets
+
+    # 🔧 Fix generale per evitare problemi grafici e tagli dei tab su Windows
+    QtWidgets.QApplication.setAttribute(Qt.AA_Use96Dpi, True)
+    QtWidgets.QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
+
     app = QApplication(sys.argv)
     import licenza
 

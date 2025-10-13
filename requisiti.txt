@@ -1,0 +1,34 @@
+===========================================
+   FRANCA DYS – REQUISITI DI SISTEMA
+===========================================
+
+🖥 Sistema operativo supportato:
+- Windows 10 (64 bit)
+- Windows 11 (64 bit)
+
+⚠️ Il programma non è compatibile con:
+- Windows 7, Windows 8, Windows 8.1
+- macOS
+- Linux
+
+💾 Requisiti minimi hardware:
+- RAM: almeno 4 GB
+- Spazio su disco: 300 MB liberi
+- Risoluzione schermo consigliata: 1366×768 o superiore
+
+📦 Note importanti:
+- Il programma salva i propri dati in:
+  C:\Users\<NOME_UTENTE>\AppData\Roaming\Franca Dys
+- Non spostare o modificare questa cartella.
+- Per disinstallare la versione demo, eliminare solo la cartella di programma
+  (non la cartella AppData, che contiene i dati utente e la licenza).
+
+🔒 Licenza e protezione:
+- La versione demo è valida per 30 giorni dal primo avvio.
+- La licenza completa è legata al computer su cui è attivata.
+- Ogni attivazione è personale e non trasferibile.
+
+-------------------------------------------
+© 2025 – Franca Dys | Tutti i diritti riservati
+Supporto tecnico: francadys.supporto@gmail.com
+-------------------------------------------

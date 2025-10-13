@@ -12,7 +12,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt
 import hashlib
 import stat, subprocess
-DEV_MODE = True # True = sviluppo (file visibile e scrivibile). Metti False in produzione.
+DEV_MODE = False # True = sviluppo (file visibile e scrivibile). Metti False in produzione.
 
 
 licenza_valida = False
@@ -348,27 +348,39 @@ def check_licenza():
 
         # --- Verifica scadenza ---
         if giorni_restanti <= 0:
+            # Finestra modale obbligatoria: o attivi o esci. Non si torna nella home.
             msg = QMessageBox()
             msg.setIcon(QMessageBox.Critical)
             msg.setWindowTitle("Franca Dys – Licenza scaduta")
             msg.setText(
                 "⛔ Il periodo di prova di 30 giorni è terminato.\n\n"
-                "Per continuare a usare Franca Dys:\n"
-                "1. Genera il codice macchina.\n"
-                "2. Invia il file o il codice a: francadys.supporto@gmail.com\n"
-                "3. Riceverai la licenza completa."
+                "Per continuare a usare Franca Dys è necessario attivare la licenza completa."
             )
-            msg.addButton("Chiudi", QMessageBox.RejectRole)
-            msg.addButton("Apri finestra di attivazione", QMessageBox.ActionRole)
+            btn_chiudi = msg.addButton("Chiudi", QMessageBox.RejectRole)
+            btn_attiva = msg.addButton("Apri finestra di attivazione", QMessageBox.ActionRole)
+            # FORZA la modalità applicazione modale: blocca tutte le altre finestre finché l'utente risponde
+            msg.setWindowModality(Qt.ApplicationModal)
             msg.exec_()
 
-            if msg.clickedButton().text() == "Apri finestra di attivazione":
+            # Se l'utente ha scelto "Apri finestra di attivazione" apri la finestra, altrimenti esci
+            if msg.clickedButton() == btn_attiva:
                 from finestra_attivazione import FinestraAttivazione
                 finestra_attivazione_instance = FinestraAttivazione()
                 finestra_attivazione_instance.setWindowModality(Qt.ApplicationModal)
                 finestra_attivazione_instance.show()
+                # blocca tutto il resto finché non chiude la finestra
+                loop = QApplication.instance()
+                while finestra_attivazione_instance.isVisible():
+                    loop.processEvents()
+
+                # dopo la chiusura della finestra di attivazione ricontrolla lo stato licenza
+                # (puoi reinvocare check_licenza() o terminare per sicurezza)
+                # Per semplicità, termina l'app e chiedi di riavviare:
+                QMessageBox.information(None, "Riavvia", "Riavvia il programma dopo l'attivazione.")
+                sys.exit(0)
             else:
-                sys.exit()
+                # Chiudere senza tornare alla home
+                sys.exit(0)
 
         elif giorni_restanti <= 10:
             msg = QMessageBox()
