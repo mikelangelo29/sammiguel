@@ -326,6 +326,7 @@ class SchedeValutazioneWindow(QWidget):
             "Livello igiene orale:": ["", "buono", "sufficiente", "scarso", "molto scarso"],
             "Residui alimentari orali:": ["", "si", "no"],
             "Cannula tracheale:": ["", "si", "no"],
+            "Riflessi patologici:": ["", "presenti", "assenti"],
             "Controllo posturale:": ["", "fisiologico", "patologico"],
             "Scialorrea:": ["", "si", "no"],
             "Voce gorgogliante:": ["", "si", "no"],
@@ -341,6 +342,7 @@ class SchedeValutazioneWindow(QWidget):
             "Residui alimentari orali:",
             "Cannula tracheale:",
             "Controllo posturale:",
+            "Riflessi patologici:",
             "Scialorrea:",
             "Deficit visivi:",
             "Deficit uditivi:",
@@ -1389,6 +1391,7 @@ class SchedeValutazioneWindow(QWidget):
             "Livello igiene orale",
             "Residui alimentari orali",
             "Cannula tracheale",
+            "Riflessi patologici",
             "Controllo posturale",
             "Scialorrea",
             "Voce gorgogliante",
@@ -1402,6 +1405,7 @@ class SchedeValutazioneWindow(QWidget):
         descr_osservazione = [
             "Residui alimentari orali:",
             "Cannula tracheale:",
+            "Riflessi patologici:",
             "Scialorrea:",
             "Deficit visivi:",
             "Deficit uditivi:",
@@ -1709,12 +1713,17 @@ class SchedeValutazioneWindow(QWidget):
                     for lbl, val in zip(labels_conclusioni, combos):
                         if val and val.strip():
                             _draw_label_value(y, lbl, val)
+                            y -= 0.5 * cm   # 👈 aggiungi sempre questo per separare le righe
+
                     note = scheda.get("note", "")
                     if note and note.strip():
+                        y -= 0.3 * cm      # 👈 spazio prima della nota
                         c.setFont("Helvetica", 9)
-                        c.drawString(margin + 1*cm, y, f"Conclusioni: {note}")
-                        y -= 0.5*cm
-                    y -= 0.2*cm
+                        c.drawString(margin + 1 * cm, y, f"Conclusioni: {note}")
+                        y -= 0.5 * cm      # 👈 spazio dopo la nota
+
+                    y -= 0.5 * cm          # 👈 spazio finale di chiusura sezione
+
 
                 # --- ALTRO ---
                 #else:

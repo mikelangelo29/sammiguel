@@ -67,6 +67,10 @@
       "Si": {"criticita": "Critico"},
       "No": {"criticita": "Non Critico"}
     },
+    "Riflessi patologici": {
+      "presenti": {"criticita": "Critico"},
+      "assenti": {"criticita": "Non Critico"}
+    },
     "Controllo posturale": {
       "Fisiologico": {"criticita": "Non Critico"},
       "Patologico": {"criticita": "Critico"}

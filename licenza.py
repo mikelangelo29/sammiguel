@@ -12,7 +12,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt
 import hashlib
 import stat, subprocess
-DEV_MODE = False # True = sviluppo (file visibile e scrivibile). Metti False in produzione.
+DEV_MODE = True # True = sviluppo (file visibile e scrivibile). Metti False in produzione.
 
 
 licenza_valida = False
