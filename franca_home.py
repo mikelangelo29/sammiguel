@@ -61,7 +61,7 @@ class HomeFranca(QWidget):
         layout.addWidget(label_title)
 
         # --- Sottotitolo ---
-        label_sub = QLabel("Valutazione logopedica della disfagia")
+        label_sub = QLabel("Ausili alla Valutazione Logopedica della Disfagia")
         label_sub.setStyleSheet("""
             font-size: 21px;
             font-style: italic;
