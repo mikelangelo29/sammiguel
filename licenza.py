@@ -12,7 +12,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt
 import hashlib
 import stat, subprocess
-DEV_MODE = False   # True = sviluppo (file visibile e scrivibile). Metti False in produzione.
+DEV_MODE = False # True = sviluppo (file visibile e scrivibile). Metti False in produzione.
 
 
 licenza_valida = False
@@ -36,7 +36,7 @@ LIC_FILE = APPDATA_PATH / "licenza.json"          # File che registra la data di
 REG_PATH = rf"Software\\{APP_NAME}"
 REG_KEY = "Licenza"
 
-licenza_valida = False
+licenza_valida = True
 
 
 # ==============================================================
@@ -86,6 +86,27 @@ def _hide_and_lock_file_windows(path, readonly=True, hide=True, force_dev=False)
             print(f"DEBUG: nascosto e bloccato {path}")
     except Exception as e:
         print("DEBUG: errore in _hide_and_lock_file_windows:", e)
+
+import subprocess, os, sys
+
+def _hide_franca_folder(dev_mode=False):
+    """Rende la cartella Franca Dys completamente invisibile (anche con 'Mostra file nascosti')."""
+    try:
+        folder = str(APPDATA_PATH.resolve())
+        if sys.platform != "win32" or not os.path.exists(folder):
+            return
+
+        if not dev_mode:
+            # 🔒 Nasconde la cartella in modo totale (solo visibile se si disattivano le protezioni di sistema)
+            subprocess.run(f'attrib +s +h "{folder}"', shell=True)
+            print(f"DEBUG: cartella {folder} resa completamente invisibile")
+        else:
+            # 🧰 In sviluppo la riportiamo visibile
+            subprocess.run(f'attrib -s -h "{folder}"', shell=True)
+            print(f"DEBUG: cartella {folder} resa visibile per sviluppo")
+
+    except Exception as e:
+        print("DEBUG: errore in _hide_franca_folder:", e)
 
 
 # ==============================================================
@@ -309,6 +330,17 @@ def check_licenza():
             _hide_and_lock_file_windows(LIC_FILE, readonly=True, hide=True, force_dev=DEV_MODE)
             print("DEBUG: creato nuovo file demo:", LIC_FILE)
 
+            # --- Protezione file di licenza (solo in modalità distribuzione) ---
+            if not DEV_MODE:
+                try:
+                    import subprocess
+                    # Rende il file di sola lettura e nascosto
+                    subprocess.run(f'attrib +r +h "{LIC_FILE}"', shell=True)
+                    
+                    print("DEBUG: file licenza reso nascosto e di sola lettura")
+                except Exception as e:
+                    print("DEBUG: errore protezione file licenza:", e)
+
         # --- Calcolo giorni rimanenti ---
         giorni_passati = (oggi - data_inizio).days
         giorni_restanti = DURATA_DEMO - giorni_passati
@@ -357,7 +389,22 @@ def check_licenza():
                 finestra_attivazione_instance.setWindowModality(Qt.ApplicationModal)
                 finestra_attivazione_instance.show()
 
+        _hide_franca_folder(dev_mode=DEV_MODE)
+
+        # --- Sblocco automatico in modalità sviluppo ---
+        if DEV_MODE:
+            try:
+                import subprocess
+                subprocess.run(f'attrib -r -h "{LIC_FILE}"', shell=True)
+                subprocess.run(f'attrib -s -h "{APPDATA_PATH}"', shell=True)
+                print("DEBUG: DEV_MODE attivo: file licenza reso visibile e modificabile")
+            except Exception as e:
+                print("DEBUG: errore rimozione protezione DEV_MODE:", e)
+
+
         print("DEBUG: controllo licenza completato senza errori.")
+
+        
 
     except Exception as e:
         import traceback
