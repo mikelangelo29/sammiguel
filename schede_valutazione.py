@@ -1,11 +1,13 @@
 from PyQt5.QtWidgets import (
-    QWidget, QVBoxLayout, QTabWidget, QFormLayout, QLineEdit, QComboBox, QGridLayout, 
+    QWidget, QVBoxLayout, QTabWidget, QFormLayout, QLineEdit, QComboBox, QGridLayout, QLabel,
     QSpinBox, QHBoxLayout, QPushButton, QGroupBox, QTextEdit, QCheckBox, QLabel, QSizePolicy, QMessageBox, QScrollArea, QStyle
 )
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFont, QPixmap
 from PyQt5.QtWidgets import QStylePainter, QStyleOptionTab, QTabBar
 from datetime import datetime
+import os
+
 
 # === Costanti globali per le prassie bucco-linguo-facciali ===
 PRASSIE_VOCI = [
@@ -185,6 +187,45 @@ class SchedeValutazioneWindow(QWidget):
             self.disabilita_tutti_i_controlli()  
 
         self.setLayout(layout)
+
+
+        # --- Filigrana logo Franca Dys in basso a destra ---
+        self.filigrana = QLabel(self)
+        logo_path = os.path.join(os.path.dirname(__file__), "logo_franca.png")
+
+        if os.path.exists(logo_path):
+            pixmap = QPixmap(logo_path)
+            scaled = pixmap.scaled(150, 150, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            self.filigrana.setPixmap(scaled)
+            self.filigrana.setStyleSheet("opacity: 0.12;")  # 👈 trasparente al 12%
+            self.filigrana.resize(scaled.width(), scaled.height())
+            self.filigrana.move(
+                self.width() - scaled.width() - 20,
+                self.height() - scaled.height() - 20
+            )
+            self.filigrana.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+        else:
+            self.filigrana.setText("Franca Dys")
+            self.filigrana.setStyleSheet(
+                "color: rgba(0, 0, 0, 30%); font-size: 14pt;"
+            )
+
+        # --- Mantiene la filigrana in basso a destra anche se ridimensioni la finestra ---
+        def _posiziona_filigrana():
+            if self.filigrana.pixmap():
+                self.filigrana.move(
+                    self.width() - self.filigrana.width() - 20,
+                    self.height() - self.filigrana.height() - 20
+                )
+
+# --- Mantiene la filigrana in basso a destra anche se ridimensioni la finestra ---
+        def resizeEvent(event):
+            _posiziona_filigrana()
+            super(SchedeValutazioneWindow, self).resizeEvent(event)
+
+        # Riassegna l'evento di resize
+        self.resizeEvent = resizeEvent
+
 
     def add_tab(self, tab_widget, title):
         wrapper = QWidget()
