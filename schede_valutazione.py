@@ -999,7 +999,8 @@ class SchedeValutazioneWindow(QWidget):
             "Consistenza alimenti suggerita:": ["", "nulla per os", "3. Sciropposo", "4. Cremoso",
                                                 "5. Tritato fine & umido", "6. Tenero/spezzettato", "7. Facilmente masticabile"],
             "Modalità somministrazione farmaci:": ["", "regolare", "intere in semisolido", 
-                                                "tritate in semisolido", "via enterale"]
+                                                "tritate in semisolido", "via enterale"],
+            "Valutazione strumentale FEES/VFSS consigliata:": ["", "sì", "no"]
         }
 
         tab.combos = []
@@ -1015,6 +1016,7 @@ class SchedeValutazioneWindow(QWidget):
 
             tab.combos.append(combo)
             form.addRow(lbl, combo)
+
 
         main_layout.addLayout(form)
 
@@ -1513,6 +1515,19 @@ class SchedeValutazioneWindow(QWidget):
 
         labels_prassie = PRASSIE_VOCI[:]  
 
+        labels_bedside = [
+            "Prova 5 ml",
+            "Prova 60 ml",
+            "Gag reflex",
+            "Elevazione laringea",
+            "Tosse riflessa",
+            "Saturazione",
+            "Tentativi multipli",
+            "Voce",
+            "Segni di penetrazione e/o aspirazione"
+]
+
+
         labels_pasto = [
             "Livelli di vigilanza", "Consistenza(IDDSI)", "Autonomo", "Rifiuta cibo", "Modalità assunzione",
             "Edentule", "Protesi dentaria", "Masticazione", "Deglutisce senza masticare",
@@ -1531,8 +1546,9 @@ class SchedeValutazioneWindow(QWidget):
 
         labels_conclusioni = [
             "Disfagia", "Scala DOSS", "Consistenza liquidi suggerita", "Modalità assunzione liquidi suggerita",
-            "Consistenza alimenti suggerita", "Modalità somministrazione farmaci"
+            "Consistenza alimenti suggerita", "Modalità somministrazione farmaci", "Valutazione strumentale FEES/VFSS consigliata"
         ]
+
 
         try:
             c = canvas.Canvas(percorso, pagesize=A4)
@@ -1643,6 +1659,12 @@ class SchedeValutazioneWindow(QWidget):
                         if val and val.strip():
                             _draw_label_value(y, lbl, val)
                             y -= 0.5 * cm
+                    # --# 🔹 Controllo margine pagina
+                        if y < 2 * cm:
+                            c.showPage()
+                            c.setFont("Helvetica", 10)
+                            y = height - 2 * cm
+                        
                     note = scheda.get("note", "")
                     if note and note.strip():
                         c.setFont("Helvetica", 9)
@@ -1651,47 +1673,148 @@ class SchedeValutazioneWindow(QWidget):
                     y -= 0.2*cm
 
                 # --- OSSERVAZIONE ---
+                # --- OSSERVAZIONE ---
                 elif nome_scheda == "Osservazione":
                     combos = scheda.get("combos", [])
-                    for lbl, val in zip(labels_osservazione, combos):
-                        if val and val.strip():
-                            _draw_label_value(y, lbl, val)
-                            y -= 0.5 * cm
-                    # Descrizioni specifiche
                     descr = scheda.get("descrizioni", {})
-                    for k in descr_osservazione:
-                        value = descr.get(k, "")
-                        if value and value.strip():
-                            c.setFont("Helvetica-Oblique", 9)
-                            c.drawString(margin + 1.3*cm, y, f"{k} {value}")
-                            y -= 0.4*cm
+
+                    for lbl, val in zip(labels_osservazione, combos):
+                        val_clean = str(val).strip()
+                        if not val_clean or val_clean.lower() in ["", "none", "seleziona", "n/d", "-", "--"]:
+                            continue
+
+                        # 🔹 Etichetta principale
+                        c.setFont("Helvetica-Bold", 10)
+                        c.drawString(margin + 0.5*cm, y, f"{lbl}:")
+                        c.setFont("Helvetica", 10)
+                        c.drawString(margin + 4.5*cm, y, val_clean)
+                        y -= 0.45 * cm
+
+                        # 🔹 Descrizione associata (se esiste)
+                        for dk, dv in descr.items():
+                            if not dv or not dv.strip():
+                                continue
+                            dk_norm = dk.lower().replace(":", "").replace("descrizione", "").strip()
+                            lbl_norm = lbl.lower().replace(":", "").strip()
+                            if dk_norm.startswith(lbl_norm.split()[0]) or lbl_norm.split()[0] in dk_norm:
+                                dv_clean = dv.strip().replace("\u200b", "")
+                                if dv_clean:
+                                    c.setFont("Helvetica-Oblique", 9)
+                                    c.drawString(margin + 1.3 * cm, y, dv_clean)
+                                    y -= 0.35 * cm
+                                break
+
+                        # 🔹 Controllo multipagina
+                        if y < 2 * cm:
+                            c.showPage()
+                            c.setFont("Helvetica", 10)
+                            y = height - 2 * cm
+
+                    # --- Note finali ---
                     note = scheda.get("note", "")
                     if note and note.strip():
                         c.setFont("Helvetica", 9)
                         c.drawString(margin + 1*cm, y, f"Note: {note}")
                         y -= 0.5*cm
+
                     y -= 0.2*cm
 
+
+                # --- VALUTAZIONE MORFO-DINAMICA ---
                 # --- VALUTAZIONE MORFO-DINAMICA ---
                 elif nome_scheda == "Valutazione Morfo-Dinamica":
                     combos = scheda.get("combos", [])
-                    for lbl, val in zip(labels_morfodinamica, combos):
-                        if val and val.strip():
-                            _draw_label_value(y, lbl, val)
-                            y -= 0.5 * cm
                     descr = scheda.get("descrizioni", {})
-                    for k in descr_morfodinamica:
-                        value = descr.get(k, "")
-                        if value and value.strip():
-                            c.setFont("Helvetica-Oblique", 9)
-                            c.drawString(margin + 1.3*cm, y, f"{k}: {value}")
-                            y -= 0.4*cm
+
+                    gruppi = {
+                        "Labbra": [
+                            "Protrusione (labbra)", "Retrazione (labbra)", "Competenza (labbra)",
+                            "Tono (labbra)", "Deviazione a riposo (labbra)"
+                        ],
+                        "Lingua": [
+                            "Protrusione (lingua)", "Retropulsione (lingua)", "Lateralizzazione dx (lingua)",
+                            "Lateralizzazione sx (lingua)", "Trofismo (lingua)", "Forza (lingua)",
+                            "Tono (lingua)", "Velocità (lingua)", "Ampiezza movimenti (lingua)",
+                            "Deficit di lato (lingua)"
+                        ],
+                        "Palato duro": ["Aspetto (palato duro)"],
+                        "Velo del palato": [
+                            "Tono (velo del palato)", "Simmetria a riposo (velo del palato)",
+                            "Elevazione (velo del palato)", "Iperrinofonia (velo del palato)"
+                        ],
+                        "Mandibola": [
+                            "Deviazione in apertura (mandibola)", "Deviazione a riposo (mandibola)",
+                            "Tono mm. masticatori (mandibola)"
+                        ],
+                        "Laringe": ["Valutazione (elevazione laringe)"]
+                    }
+
+                    # Mappa etichetta → valore
+                    data_map = {lbl: val for lbl, val in zip(labels_morfodinamica, combos)}
+
+                    for gruppo, sotto_voci in gruppi.items():
+                        # 🔹 Verifica: almeno una sottovoce compilata?
+                        gruppo_valido = False
+                        for voce in sotto_voci:
+                            val = str(data_map.get(voce, "")).replace("\u200b", "").strip().lower()
+                            if val not in ["", "none", "seleziona", "n/d", "-", "--"]:
+                                gruppo_valido = True
+                                break
+                        if not gruppo_valido:
+                            continue  # salta il gruppo intero
+
+                        # --- Stampa titolo gruppo ---
+                        c.setFont("Helvetica-Bold", 10)
+                        c.drawString(margin, y, gruppo)
+                        y -= 0.45 * cm
+
+                        for voce in sotto_voci:
+                            val = data_map.get(voce, "")
+                            val_clean = str(val).replace("\u200b", "").strip()
+
+                            if not val_clean or val_clean.lower() in ["", "none", "seleziona", "n/d", "-", "--"]:
+                                continue
+
+                            # --- Sottovoce + valore ---
+                            c.setFont("Helvetica", 10)
+                            c.drawString(margin + 1.0 * cm, y, f"{voce.split('(')[0].strip()}: {val_clean}")
+                            y -= 0.45 * cm
+
+                            # --- Eventuale descrizione ---
+                            for dk, dv in descr.items():
+                                if not dv or not dv.strip():
+                                    continue
+                                dk_norm = dk.lower().replace("descrizione", "").replace("(", "").replace(")", "").strip()
+                                voce_norm = voce.lower().replace("(", "").replace(")", "").strip()
+                                if dk_norm.startswith(voce_norm.split()[0]) or voce_norm.split()[0] in dk_norm:
+                                    dv_clean = dv.strip().replace("\u200b", "")
+                                    if dv_clean:
+                                        c.setFont("Helvetica-Oblique", 9)
+                                        c.drawString(margin + 1.8 * cm, y, dv_clean)
+                                        y -= 0.4 * cm
+                                    break
+
+                            # --- Controllo multipagina ---
+                            if y < 2 * cm:
+                                c.showPage()
+                                c.setFont("Helvetica", 10)
+                                y = height - 2 * cm
+
+                        # Spazio tra gruppi
+                        y -= 0.3 * cm
+
+                    # --- Note finali ---
                     note = scheda.get("note", "")
                     if note and note.strip():
                         c.setFont("Helvetica", 9)
-                        c.drawString(margin + 1*cm, y, f"Note: {note}")
-                        y -= 0.5*cm
-                    y -= 0.2*cm
+                        c.drawString(margin + 1 * cm, y, f"Note: {note}")
+                        y -= 0.5 * cm
+
+                    y -= 0.3 * cm
+
+
+
+
 
                 # --- PRASSIE BLF ---
                 elif nome_scheda == "Prassie BLF":
@@ -1704,6 +1827,11 @@ class SchedeValutazioneWindow(QWidget):
                         if txt and txt.strip():
                             _draw_label_value(y, lbl, txt)
                             y -= 0.5 * cm
+                              # 🔹 Controllo multipagina (fondamentale)
+                            if y < 2 * cm:
+                                c.showPage()
+                                c.setFont("Helvetica", 10)
+                                y = height - 2 * cm
 
                     punteggio = scheda.get("punteggio", "")
                     if punteggio:
@@ -1716,6 +1844,47 @@ class SchedeValutazioneWindow(QWidget):
                         c.drawString(margin + 1*cm, y, f"Note: {note}")
                         y -= 0.5*cm
                     y -= 0.2*cm
+                                # --- BEDSIDE ---
+                elif "Bedside" in nome_scheda:
+                    print("📄 BED", scheda)
+                    combos = scheda.get("combos", [])
+                    for lbl, val in zip(labels_bedside, combos):
+                        if val and val.strip():
+                            _draw_label_value(y, lbl, val)
+                            y -= 0.5 * cm
+
+                            # 🔹 Controllo margine pagina
+                            if y < 2 * cm:
+                                c.showPage()
+                                c.setFont("Helvetica", 10)
+                                y = height - 2 * cm
+
+                    # Descrizioni se presenti (opzionali)
+                    descr = scheda.get("descrizioni", {})
+                    for k, value in descr.items():
+                        if value and value.strip():
+                            c.setFont("Helvetica-Oblique", 9)
+                            c.drawString(margin + 1.3*cm, y, f"{k}: {value}")
+                            y -= 0.4*cm
+
+                            # 🔹 Controllo multipagina
+                            if y < 2 * cm:
+                                c.showPage()
+                                c.setFont("Helvetica", 10)
+                                y = height - 2 * cm
+
+                    note = scheda.get("note", "")
+                    if note and note.strip():
+                        c.setFont("Helvetica", 9)
+                        c.drawString(margin + 1*cm, y, f"Note: {note}")
+                        y -= 0.5*cm
+
+                        if y < 2 * cm:
+                            c.showPage()
+                            c.setFont("Helvetica", 10)
+                            y = height - 2 * cm
+
+                    y -= 0.2*cm
 
                 # --- OSSERVAZIONE DEL PASTO ---
                 elif nome_scheda == "Osservazione del Pasto":
@@ -1723,6 +1892,13 @@ class SchedeValutazioneWindow(QWidget):
                     for lbl, val in zip(labels_pasto, combos):
                         if val and val.strip():
                             _draw_label_value(y, lbl, val)
+                            y -= 0.5 * cm
+                            # 🔹 Controllo margine pagina
+                            if y < 2 * cm:
+                                c.showPage()
+                                c.setFont("Helvetica", 10)
+                                y = height - 2 * cm
+
                     # Descrizioni aggiuntive se presenti (non tutte le tab hanno)
                     desc_lineedits = scheda.get("lines", [])
                     for idx, val in enumerate(desc_lineedits):
@@ -1748,6 +1924,12 @@ class SchedeValutazioneWindow(QWidget):
                         if val and val.strip() and val != "0":
                             _draw_label_value(y, lbl, val)
                             y -= 0.5 * cm
+                            # 🔹 Controllo margine pagina
+                            if y < 2 * cm:
+                                c.showPage()
+                                c.setFont("Helvetica", 10)
+                                y = height - 2 * cm
+
                     note = scheda.get("note", "")
                     if note and note.strip():
                         c.setFont("Helvetica", 9)
@@ -1762,6 +1944,11 @@ class SchedeValutazioneWindow(QWidget):
                         if val and val.strip():
                             _draw_label_value(y, lbl, val)
                             y -= 0.5 * cm   # 👈 aggiungi sempre questo per separare le righe
+                            # 🔹 Controllo margine pagina
+                            if y < 2 * cm:
+                                c.showPage()
+                                c.setFont("Helvetica", 10)
+                                y = height - 2 * cm
 
                     note = scheda.get("note", "")
                     if note and note.strip():
@@ -1889,6 +2076,7 @@ class SchedeValutazioneWindow(QWidget):
             "Livello igiene orale",
             "Residui alimentari orali:",
             "Cannula tracheale",
+            "Riflessi patologici",
             "Controllo posturale",
             "Scialorrea",
             "Voce gorgogliante:",
@@ -1908,11 +2096,11 @@ class SchedeValutazioneWindow(QWidget):
             "Deviazione a riposo",
             # Lingua
             "Protrusione lingua",
-            "Retropulsione lingua",
+            "Retropulsione ",
             "Lateralizzazione dx",
             "Lateralizzazione sx",
             "Trofismo",
-            "Tono lingua",
+            "Tono",
             "Forza",
             "Velocità",
             "Ampiezza movimenti",
@@ -1980,6 +2168,8 @@ class SchedeValutazioneWindow(QWidget):
     }
 
             trovati = []
+            processed_morfodinamica = False
+
             for scheda in valutazione.get("schede", []):
                 nome_ui = scheda.get("nome")
                 nome_json = tab_map.get(nome_ui)
@@ -2009,6 +2199,135 @@ class SchedeValutazioneWindow(QWidget):
                 combos = scheda.get("combos", [])
                 if not labels or not combos:
                     continue
+
+                # === MORFODINAMICA (gestione annidata, non invasiva) ===
+                if nome_json == "MORFODINAMICA":
+                    # Mappa INDICE -> (Gruppo JSON, Voce JSON) per i tuoi labels nell'ordine attuale
+                    morfo_index_map = {
+                        0: ("Labbra", "Protrusione"),
+                        1: ("Labbra", "Retrazione"),
+                        2: ("Labbra", "Competenza"),
+                        3: ("Labbra", "Tono"),
+                        4: ("Labbra", "Deviazione a riposo"),
+
+                        5: ("Lingua", "Protrusione"),
+                        6: ("Lingua", "Retropulsione"),
+                        7: ("Lingua", "Lateralizzazione a dx"),
+                        8: ("Lingua", "Lateralizzazione a sx"),
+                        9: ("Lingua", "Trofismo"),
+                        10: ("Lingua", "Tono"),
+                        11: ("Lingua", "Forza"),
+                        12: ("Lingua", "Velocità"),
+                        13: ("Lingua", "Ampiezza movimenti"),
+                        14: ("Lingua", "Deficit di lato"),
+
+                        15: ("Palato duro", "Aspetto"),
+
+                        16: ("Velo del palato", "Tono"),
+                        17: ("Velo del palato", "Simmetria a riposo"),
+                        18: ("Velo del palato", "Elevazione"),
+                        19: ("Velo del palato", "Iperrinofonia"),
+
+                        20: ("Mandibola", "Deviazione in apertura"),
+                        21: ("Mandibola", "Deviazione a riposo"),
+                        22: ("Mandibola", "Tono mm masticatori"),
+
+                        # Ultimo campo: etichetta UI "Valutazione (elevazione laringe)"
+                        # Il tuo JSON può avere DUE varianti:
+                        #   A) "Laringe" -> { "Elevazione": { ... } }
+                        #   B) "Elevazione laringe": { ... }   (senza sotto-voce)
+                        23: ("__LARINGE__", "Elevazione"),  # gestito sotto con fallback
+                    }
+
+                    # Helper: trova una chiave in modo case-insensitive e ignorando spazi doppi
+                    def _find_key(d, target):
+                        t = str(target).lower().strip().replace("  ", " ")
+                        for k in d.keys():
+                            k_norm = str(k).lower().strip().replace("  ", " ")
+                            if k_norm == t:
+                                return k
+                        return None
+
+                    # Prepara mappa etichetta->valore
+                    data_map = {i: str(v).strip() for i, v in enumerate(combos)}
+
+                    for idx, val_descr in data_map.items():
+                        if not val_descr or val_descr in ("", "0", "-", "None", "n/d"):
+                            continue
+                        if idx not in morfo_index_map:
+                            continue
+
+                        gruppo_raw, voce_raw = morfo_index_map[idx]
+
+                        # Gestione speciale ultimo campo (laringe)
+                        if gruppo_raw == "__LARINGE__":
+                            # Variante A: gruppo "Laringe" con sotto-voce "Elevazione"
+                            gA = _find_key(regole_scheda, "Laringe")
+                            if gA and isinstance(regole_scheda[gA], dict):
+                                vA = _find_key(regole_scheda[gA], voce_raw)  # "Elevazione"
+                                if vA:
+                                    for attesa, regola in regole_scheda[gA][vA].items():
+                                        if val_descr.lower() == str(attesa).lower():
+                                            if str(regola.get("criticita","")).lower() == "critico":
+                                                trovati.append({
+                                                    "scheda": nome_json,
+                                                    "campo": f"{gA} → {vA}",
+                                                    "voce": val_descr,
+                                                    "gravita": regola.get("gravita", ""),
+                                                    "messaggio": regola.get("messaggio", val_descr)
+                                                })
+                                    
+                                    processed_morfodinamica = True
+                                    continue  # passa al prossimo idx
+                                if nome_json == "MORFODINAMICA" and processed_morfodinamica:
+                                    continue
+
+
+                           # Variante B: gruppo diretto "Elevazione laringe"
+                            gB = _find_key(regole_scheda, "Elevazione laringe")
+                            if gB and isinstance(regole_scheda[gB], dict):
+                                for attesa, regola in regole_scheda[gB].items():
+                                    if val_descr.lower() == str(attesa).lower():
+                                        if str(regola.get("criticita","")).lower() == "critico":
+                                            trovati.append({
+                                                "scheda": nome_json,
+                                                "campo": gB,   # es. "Elevazione laringe"
+                                                "voce": val_descr,
+                                                "gravita": regola.get("gravita", ""),
+                                                "messaggio": regola.get("messaggio", val_descr)
+                                            })
+                            continue  # finito idx 23
+
+                        # Per tutti gli altri campi:
+                        gkey = _find_key(regole_scheda, gruppo_raw)
+                        if not gkey or not isinstance(regole_scheda[gkey], dict):
+                            continue
+
+                        vkey = _find_key(regole_scheda[gkey], voce_raw)
+                        if not vkey:
+                            # tenta qualche variante comune (es. "Lateralizzazione dx" vs "Laterlizzazione a dx")
+                            # NB: aggiungi qui, se nel tuo JSON ci sono refusi noti
+                            continue
+
+                        # Confronta il valore con le regole (case-insensitive)
+                        for attesa, regola in regole_scheda[gkey][vkey].items():
+                            if val_descr.lower() == str(attesa).lower():
+                                if str(regola.get("criticita","")).lower() == "critico":
+                                    trovati.append({
+                                        "scheda": nome_json,
+                                        "campo": f"{gkey} → {vkey}",
+                                        "voce": val_descr,
+                                        "gravita": regola.get("gravita", ""),
+                                        "messaggio": regola.get("messaggio", val_descr)
+                                    })
+                                break
+
+                    # Importantissimo: non far processare MORFODINAMICA dal ramo generico
+                    continue
+                # === FINE RAMO MORFODINAMICA ===
+
+
+                
                 for idx, campo in enumerate(labels):
                     if idx >= len(combos):
                         continue
@@ -2028,23 +2347,41 @@ class SchedeValutazioneWindow(QWidget):
                             val_num = 0
                         val_descr = str(valore).strip()
 
-                    voci_rules = regole_scheda.get(campo)
-                    if not voci_rules:
+                    # 🔹 Normalizza la chiave del campo (per ignorare i due punti, spazi, maiuscole)
+# 🔹 Normalizza la chiave del campo (rimuove :, spazi, doppie e converte in minuscolo)
+                    campo_norm = (
+                        str(campo)
+                        .lower()
+                        .replace(":", "")
+                        .replace("  ", " ")
+                        .strip()
+                    )
+
+                    # 🔹 Cerca la chiave più simile nel JSON (ignorando maiuscole e punteggiatura)
+                    found_key = None
+                    for k in regole_scheda.keys():
+                        k_norm = (
+                            str(k)
+                            .lower()
+                            .replace(":", "")
+                            .replace("  ", " ")
+                            .strip()
+                        )
+                        if campo_norm == k_norm:
+                            found_key = k
+                            break
+
+                    if not found_key:
                         continue
 
-                    # 🔹 Confronto flessibile: prima per descrizione, poi per valore numerico
-                    trovato = False
+                    voci_rules = regole_scheda[found_key]
+
+                    # 🔹 Confronto flessibile del valore
                     for voce_attesa, regola in voci_rules.items():
                         voce_attesa_norm = str(voce_attesa).strip().lower()
+                        val_descr_norm = val_descr.lower().strip()
 
-                        # Confronto per testo (descrizione)
-                        if val_descr.lower() == voce_attesa_norm:
-                            trovato = True
-                        # Oppure se il numero coincide con la chiave numerica
-                        elif str(val_num) == voce_attesa_norm:
-                            trovato = True
-
-                        if trovato:
+                        if val_descr_norm == voce_attesa_norm or str(val_num) == voce_attesa_norm:
                             criticita = regola.get("criticita", "").lower()
                             if criticita == "critico":
                                 trovati.append({
@@ -2055,6 +2392,8 @@ class SchedeValutazioneWindow(QWidget):
                                     "messaggio": regola.get("messaggio", val_descr or str(val_num))
                                 })
                             break
+
+
 
             return trovati
 

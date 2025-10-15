@@ -47,7 +47,7 @@
     "Consistenze alimenti assunti (IDDSI)": {
       "3. Sciropposo": {"criticita": "Non etichettabile"},
       "4. Cremoso": {"criticita": "Non etichettabile"},
-      "5.Tritato fine umido": {"criticita": "Non etichettabile"},
+      "5. Tritato fine umido": {"criticita": "Non etichettabile"},
       "6. Tenero spezzettato": {"criticita": "Non etichettabile"},
       "7. Normale": {"criticita": "Non etichettabile"}
     }
@@ -59,7 +59,7 @@
       "Scarso": {"criticita": "Critico"},
       "Molto scarso": {"criticita": "Critico"}
     },
-    "Residui alimentari orali:": {
+    "Residui alimentari orali": {
       "Si": {"criticita": "Critico"},
       "No": {"criticita": "Non Critico"}
     },
@@ -79,14 +79,14 @@
       "Si": {"criticita": "Critico"},
       "No": {"criticita": "Non Critico"}
     },
-    "Voce gorgogliante:": {
+    "Voce gorgogliante": {
       "Si": {"criticita": "Critico"},
       "No": {"criticita": "Non Critico"}
     },
     "Tosse volontaria": {
-      "Efficace": {"criticita": "Critico"},
-      "Ipovalida": {"criticita": "Non Critico"},
-      "Assente": {"criticita": "Non Critico"}
+      "Efficace": {"criticita": "Non Critico"},
+      "Ipovalida": {"criticita": "Critico"},
+      "Assente": {"criticita": "Critico"}
     },
     "Dispnea": {
       "Si": {"criticita": "Critico"},
@@ -356,9 +356,9 @@
       "Insufficienti": {"criticita": "Critico"}
     },
     "Consistenza (IDDSI)": {
-      "3.sciropposo": {"criticita": "Non etichettabile"},
-      "4.cremoso": {"criticita": "Non etichettabile"},
-      "5.Tritato fine umido": {"criticita": "Non etichettabile"},
+      "3. sciropposo": {"criticita": "Non etichettabile"},
+      "4. cremoso": {"criticita": "Non etichettabile"},
+      "5. Tritato fine umido": {"criticita": "Non etichettabile"},
       "6. Tenero spezzettato": {"criticita": "Non etichettabile"},
       "7. Normale": {"criticita": "Non etichettabile"}
     },
@@ -457,12 +457,17 @@
     },
     "Scala Ddos": {
       "1. disfagia severa": {"criticita": "Critico"},
-      "2, moderata-severa": {"criticita": "Critico"},
+      "2. moderata-severa": {"criticita": "Critico"},
       "3. moderata": {"criticita": "Critico"},
       "4. lieve-moderata": {"criticita": "Critico"},
       "5. lieve": {"criticita": "Critico"},
       "6. alcuni limiti funzionali": {"criticita": "Non Critico"},
-      "7, normale": {"criticita": "Non Critico"}
+      "7. normale": {"criticita": "Non Critico"}
+    },
+    "Valutazione strumentale FEES/VFSS consigliata:": {
+      "si": {"criticita": "Critico"},
+      "no": {"criticita": "Non Critico"}
     }
+
   }
 }
