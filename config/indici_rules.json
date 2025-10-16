@@ -151,12 +151,12 @@
         "Ridotta": {"criticita": "Critico"},
         "Assente": {"criticita": "Critico"}
       },
-      "Laterlizzazione a dx": {
+      "Laterlizzazione dx": {
         "Adeguata": {"criticita": "Non Critico"},
         "Ridotta": {"criticita": "Critico"},
         "Assente": {"criticita": "Critico"}
       },
-      "Laterlizzazione a sx": {
+      "Laterlizzazione sx": {
         "Adeguata": {"criticita": "Non Critico"},
         "Ridotta": {"criticita": "Critico"},
         "Assente": {"criticita": "Critico"}
@@ -242,6 +242,25 @@
       "assente": {"criticita": "Critico"},
       "ritardata": {"criticita": "Critico"}
     }
+    ,
+"Sensibilità buccale": {
+  "Sensibilità termica": {
+    "Normale": { "criticita": "Non Critico" },
+    "Ridotta": { "criticita": "Critico" },
+    "Assente": { "criticita": "Critico" }
+  },
+  "Sensibilità tattile": {
+    "Normale": { "criticita": "Non Critico" },
+    "Ridotta": { "criticita": "Critico" },
+    "Assente": { "criticita": "Critico" }
+  },
+  "Sensibilità propriocettiva": {
+    "Normale": { "criticita": "Non Critico" },
+    "Ridotta": { "criticita": "Critico" },
+    "Assente": { "criticita": "Critico" }
+  }
+}
+
   },
 "PRASSIE BLF": {
   "Mostrare la lingua": {

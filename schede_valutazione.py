@@ -456,6 +456,7 @@ class SchedeValutazioneWindow(QWidget):
 
 
     def tab_morfodinamica(self, base_font, section_font):
+        print(">>> DEBUG: funzione tab_morfodinamica eseguita!")
         from PyQt5.QtWidgets import QScrollArea, QSizePolicy
 
         tab = QWidget()
@@ -609,6 +610,28 @@ class SchedeValutazioneWindow(QWidget):
         add_grid_rows(laringe_grid, laringe_fields)
         laringe_box.setLayout(laringe_grid)
         layout.addWidget(laringe_box)
+
+                # --- Sensibilità buccale ---
+        sensibilita_box = QGroupBox("Sensibilità buccale")
+        sensibilita_box.setFont(section_font)
+        sensibilita_box.setMaximumWidth(700)
+        sensibilita_box.setStyleSheet(
+            "QGroupBox { background:#f7f7f7; border-radius:8px; margin-top:8px; padding:8px 8px 4px 8px; }"
+        )
+
+        sensibilita_grid = QGridLayout()
+
+        sensibilita_fields = [
+            ("Sensibilità termica:", ["Normale", "Ridotta", "Assente"], "Sensibilità termica descrizione"),
+            ("Sensibilità tattile:", ["Normale", "Ridotta", "Assente"], "Sensibilità tattile descrizione"),
+            ("Sensibilità propriocettiva:", ["Normale", "Ridotta", "Assente"], "Sensibilità propriocettiva descrizione"),
+        ]
+
+        add_grid_rows(sensibilita_grid, sensibilita_fields)
+        print("DEBUG Sensibilità combobox aggiunte:", len(tab.combos))
+        sensibilita_box.setLayout(sensibilita_grid)
+        layout.addWidget(sensibilita_box)
+
 
         # --- Note ---
         note_label = QLabel("Note:")
@@ -1493,7 +1516,11 @@ class SchedeValutazioneWindow(QWidget):
             "Deviazione a riposo (mandibola)",
             "Tono mm. masticatori (mandibola)",
             # Elevazione Laringe
-            "Valutazione (elevazione laringe)"
+            "Valutazione (elevazione laringe)",
+            # Sensibilità buccale
+            "Sensibilità termica",
+            "Sensibilità tattile",
+            "Sensibilità propriocettiva"
         ]
         descr_morfodinamica = [
             "Labbra protrusione descrizione",
@@ -1510,7 +1537,10 @@ class SchedeValutazioneWindow(QWidget):
             "Palato duro descrizione",
             "Velo elevazione descrizione",
             "Mandibola descrizione",
-            "Elevazione laringe descrizione"
+            "Elevazione laringe descrizione",
+            "Sensibilità termica descrizione",
+            "Sensibilità tattile descrizione",
+            "Sensibilità propriocettiva descrizione"
         ]
 
         labels_prassie = PRASSIE_VOCI[:]  
@@ -1746,7 +1776,14 @@ class SchedeValutazioneWindow(QWidget):
                             "Deviazione in apertura (mandibola)", "Deviazione a riposo (mandibola)",
                             "Tono mm. masticatori (mandibola)"
                         ],
-                        "Laringe": ["Valutazione (elevazione laringe)"]
+                        "Laringe": ["Valutazione (elevazione laringe)"],
+
+                        "Sensibilità buccale": [
+                            "Sensibilità termica",
+                            "Sensibilità tattile",
+                            "Sensibilità propriocettiva"
+                        ],
+
                     }
 
                     # Mappa etichetta → valore
@@ -2096,7 +2133,7 @@ class SchedeValutazioneWindow(QWidget):
             "Deviazione a riposo",
             # Lingua
             "Protrusione lingua",
-            "Retropulsione ",
+            "Retropulsione",
             "Lateralizzazione dx",
             "Lateralizzazione sx",
             "Trofismo",
@@ -2117,7 +2154,12 @@ class SchedeValutazioneWindow(QWidget):
             "Deviazione a riposo (mandibola)",
             "Tono mm masticatori",
             # Elevazione Laringe
-            "Valutazione (elevazione laringe)"
+            "Valutazione (elevazione laringe)",
+    # Sensibilità buccale
+            "Sensibilità termica",
+            "Sensibilità tattile",
+            "Sensibilità propriocettiva"
+
         ],
         "PRASSIE BLF": [
             "Mostrare la lingua", "Fischio", "Sbadigliare", "Toccarsi il naso con la lingua",
@@ -2212,8 +2254,8 @@ class SchedeValutazioneWindow(QWidget):
 
                         5: ("Lingua", "Protrusione"),
                         6: ("Lingua", "Retropulsione"),
-                        7: ("Lingua", "Lateralizzazione a dx"),
-                        8: ("Lingua", "Lateralizzazione a sx"),
+                        7: ("Lingua", "Lateralizzazione dx"),
+                        8: ("Lingua", "Lateralizzazione sx"),
                         9: ("Lingua", "Trofismo"),
                         10: ("Lingua", "Tono"),
                         11: ("Lingua", "Forza"),
@@ -2231,12 +2273,10 @@ class SchedeValutazioneWindow(QWidget):
                         20: ("Mandibola", "Deviazione in apertura"),
                         21: ("Mandibola", "Deviazione a riposo"),
                         22: ("Mandibola", "Tono mm masticatori"),
-
-                        # Ultimo campo: etichetta UI "Valutazione (elevazione laringe)"
-                        # Il tuo JSON può avere DUE varianti:
-                        #   A) "Laringe" -> { "Elevazione": { ... } }
-                        #   B) "Elevazione laringe": { ... }   (senza sotto-voce)
-                        23: ("__LARINGE__", "Elevazione"),  # gestito sotto con fallback
+                        23: ("__LARINGE__", "Elevazione"),
+                        24: ("Sensibilità buccale", "Sensibilità termica"),
+                        25: ("Sensibilità buccale", "Sensibilità tattile"),
+                        26: ("Sensibilità buccale", "Sensibilità propriocettiva"),
                     }
 
                     # Helper: trova una chiave in modo case-insensitive e ignorando spazi doppi
@@ -2336,6 +2376,10 @@ class SchedeValutazioneWindow(QWidget):
                     if not valore:
                         continue
 
+                    # --- PATCH MICHELANGELO: compatibilità campi con ":" finale (Sensibilità buccale ecc.) ---
+                    # Se la chiave non si trova esatta nel JSON, prova anche con ":" finale o senza
+                    campo_variants = [campo, campo + ":", campo.replace(":", "")]
+
                     # --- Estrai descrizione e valore numerico ---
                     if isinstance(valore, dict):
                         val_num = valore.get("valore", 0)
@@ -2358,18 +2402,30 @@ class SchedeValutazioneWindow(QWidget):
                     )
 
                     # 🔹 Cerca la chiave più simile nel JSON (ignorando maiuscole e punteggiatura)
+                    # 🔹 Cerca la chiave nel JSON, tollerando ":" finale e differenze minime
                     found_key = None
-                    for k in regole_scheda.keys():
-                        k_norm = (
-                            str(k)
+                    for variant in campo_variants:
+                        campo_norm = (
+                            str(variant)
                             .lower()
                             .replace(":", "")
                             .replace("  ", " ")
                             .strip()
                         )
-                        if campo_norm == k_norm:
-                            found_key = k
+                        for k in regole_scheda.keys():
+                            k_norm = (
+                                str(k)
+                                .lower()
+                                .replace(":", "")
+                                .replace("  ", " ")
+                                .strip()
+                            )
+                            if campo_norm == k_norm:
+                                found_key = k
+                                break
+                        if found_key:
                             break
+
 
                     if not found_key:
                         continue
