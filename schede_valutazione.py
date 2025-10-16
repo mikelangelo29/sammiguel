@@ -2093,7 +2093,7 @@ class SchedeValutazioneWindow(QWidget):
         # funzione che valuta criticità in base al JSON
         # Copia questa funzione DENTRO crea_report_indici
         def estrai_critici(valutazione, rules):
-            # Mappa: nome tab UI -> nome sezione JSON
+    # === 1) Mappe tab/etichette ===
             tab_map = {
                 "Dati Anamnestici": "ANAMNESI",
                 "Osservazione": "OSSERVAZIONE",
@@ -2102,144 +2102,137 @@ class SchedeValutazioneWindow(QWidget):
                 "Bedside Swallowing Assessment": "BEDSIDE",
                 "Osservazione del Pasto": "OSSERVAZIONE PASTO",
                 "Autovalutazione (GETS)": "AUTOVALUTAZIONE (GETS)",
-                "Conclusioni": "CONCLUSIONI"
+                "Conclusioni": "CONCLUSIONI",
             }
-            # Labels per ogni tab (DEVI adattare se cambi l'ordine delle domande!)
+
             labels_map = {
-        "ANAMNESI": [
-            "Livello di Vigilanza",
-            "Via di somministrazione alimenti:",
-            "Modificazioni recenti dello stato nutrizionale",
-            "Eventuali polmoniti pregresse",
-            "Modalità assunzione farmaci",
-            "Alimentazione attuale",
-            "Consistenze bevande assunte (IDDSI)",
-            "Consistenze alimenti assunti (IDDSI)"
-        ],
-        "OSSERVAZIONE": [
-            "Livello igiene orale",
-            "Residui alimentari orali:",
-            "Cannula tracheale",
-            "Riflessi patologici",
-            "Controllo posturale",
-            "Scialorrea",
-            "Voce gorgogliante:",
-            "Tosse volontaria",
-            "Dispnea",
-            "Deficit visivi",
-            "Deficit uditivi",
-            "Presenza di neglect",
-            "Presenza di disartria"
-        ],
-        "MORFODINAMICA": [
-            # Labbra
-            "Protrusione",
-            "Retrazione",
-            "Competenza",
-            "Tono",
-            "Deviazione a riposo",
-            # Lingua
-            "Protrusione lingua",
-            "Retropulsione",
-            "Lateralizzazione dx",
-            "Lateralizzazione sx",
-            "Trofismo",
-            "Tono",
-            "Forza",
-            "Velocità",
-            "Ampiezza movimenti",
-            "Deficit di lato",
-            # Palato duro
-            "Aspetto (palato duro)",
-            # Velo del palato
-            "Tono (velo del palato)",
-            "Simmetria a riposo (velo del palato)",
-            "Elevazione (velo del palato)",
-            "Iperrinofonia (velo del palato)",
-            # Mandibola
-            "Deviazione in apertura (mandibola)",
-            "Deviazione a riposo (mandibola)",
-            "Tono mm masticatori",
-            # Elevazione Laringe
-            "Valutazione (elevazione laringe)",
-    # Sensibilità buccale
-            "Sensibilità termica",
-            "Sensibilità tattile",
-            "Sensibilità propriocettiva"
+                # ANAMNESI
+                "ANAMNESI": [
+                    "Livello di vigilanza:",
+                    "Via di somministrazione alimenti:",
+                    "Modificazioni recenti dello stato nutrizionale:",
+                    "Eventuali polmoniti pregresse:",
+                    "Modalità assunzione farmaci:",
+                    "Alimentazione attuale:",
+                    "Consistenze bevande assunte (IDDSI):",
+                    "Consistenze alimenti assunti (IDDSI):",
+                ],
+                # OSSERVAZIONE
+                "OSSERVAZIONE": [
+                    "Livello igiene orale:",
+                    "Residui alimentari orali:",
+                    "Cannula tracheale:",
+                    "Riflessi patologici:",
+                    "Controllo posturale:",
+                    "Scialorrea:",
+                    "Voce gorgogliante:",
+                    "Tosse volontaria:",
+                    "Dispnea:",
+                    "Deficit visivi:",
+                    "Deficit uditivi:",
+                    "Presenza di neglect:",
+                    "Presenza di disartria:",
+                ],
+                # BEDSIDE
+                "BEDSIDE": [
+                    "Prova 5ml:",
+                    "Prova 60ml:",
+                    "Gag reflex:",
+                    "Elevazione laringea:",
+                    "Tosse riflessa:",
+                    "Saturazione:",
+                    "Tentativi multipli:",
+                    "Voce:",
+                    "Segni di penetrazione/aspirazione:",
+                ],
+                # OSSERVAZIONE PASTO
+                "OSSERVAZIONE PASTO": [
+                    "Livelli di vigilanza:",
+                    "Consistenza(IDDSI):",
+                    "Autonomo:",
+                    "Rifiuta cibo:",
+                    "Modalità assunzione:",
+                    "Edentule:",
+                    "Protesi dentaria:",
+                    "Masticazione:",
+                    "Deglutisce senza masticare",
+                    "Fuoriuscita di cibo dalla bocca:",
+                    "Fuoriuscita di cibo dal naso:",
+                    "Comparsa Tosse riflessa:",
+                    "Comparsa Tosse volontaria:",
+                    "Si distrae continuamente",
+                    "Escursione laringea:",
+                    "Voce durante/dopo pasto:",
+                    "Residui orali:",
+                    "Durata del pasto",
+                    "Assume farmaci per os durante il PASTO",
+                ],
+                # GETS
+                "AUTOVALUTAZIONE (GETS)": [
+                    "Le sembra di avere qualcosa bloccato in gola?",
+                    "Prova dolore?",
+                    "Prova fastidio/irritazione?",
+                    "Ha difficoltà a ingoiare?",
+                    "Si sente la gola chiusa?",
+                    "Si sente la gola gonfia?",
+                    "Le sembra di avere catarro?",
+                    "Non si sente la gola libera dopo aver deglutito?",
+                    "Ha bisogno di deglutire in continuazione?",
+                    "Quando deglutisce il cibo le rimane attaccato alla gola?",
+                    "Quanto tempo trascorre a pensare alla sua gola?",
+                    "Quanto la infastidisce ciò che prova in gola?",
+                ],
+                # CONCLUSIONI
+                "CONCLUSIONI": [
+                    "Disfagia:",
+                    "Scala DDOS:",
+                    "Consistenza liquidi suggerita:",
+                    "Modalità assunzione liquidi suggerita:",
+                    "Consistenza alimenti suggerita:",
+                    "Modalità somministrazione farmaci:",
+                    "Valutazione strumentale FEES/VFSS consigliata:",
+                ],
+            }
 
-        ],
-        "PRASSIE BLF": PRASSIE_VOCI[:], # Copia la lista definita sopra
+            # === 2) Helpers ===
+            def norm(s: str) -> str:
+                return str(s or "").lower().replace(":", "").replace("  ", " ").strip()
 
-        "BEDSIDE": [
-            "Prova 5 ml",
-            "Prova 60 ml"
-            # Le osservazioni (Gag reflex, Elevazione laringea, ecc.) sono probabilmente raccolte in un altro campo della scheda
-        ],
-        "OSSERVAZIONE PASTO": [
-            "Livelli di vigilanza",
-            "Consistenza (IDDSI)",
-            "Autonomo",
-            "Rifiuta il cibo",
-            "Modalità assunzione",
-            "Edentule",
-            "Protesi dentaria",
-            "Masticazione",
-            "Deglutisce senza masticare",
-            "Fuoriuscita di cibo dalla bocca",
-            "Fuoriuscita di cibo dal  naso",
-            "Comparsa di tosse riflessa",
-            "Comparsa di tosse volontaria",
-            "Si distrae continuamente",
-            "Escursione laringea",
-            "Voce durante/dopo pasto",
-            "Residui orali",
-            "Durata del pasto",
-            "Assume farmaci per os durante il PASTO"
-        ],
-        "AUTOVALUTAZIONE (GETS)": [
-            "Le sembra di avere qualcosa bloccato in gola?", "Prova dolore?", "Prova fastidio/irritazione?",
-            "Ha difficoltà a ingoiare?", "Si sente la gola chiusa?", "Si sente la gola gonfia?",
-            "Le sembra di avere catarro?", "Non si sente la gola libera dopo aver deglutito?",
-            "Ha bisogno di deglutire in continuazione?", "Quando deglutisce il cibo le rimane attaccato alla gola?",
-            "Quanto tempo trascorre a pensare alla sua gola?", "Quanto la infastidisce ciò che prova in gola?"
-        ],
-        "CONCLUSIONI": [
-            "Disfagia",
-            "Scala Ddos",
-            "Consistenza liquidi suggerita",
-            "Modalità assunzione liquidi suggerita",
-            "Consistenza alimenti suggerita",
-            "Modalità somministrazione farmaci"
-        ]
-    }
+            def estrai_numero_o_testo(v):
+                """
+                Accetta valori stringa o dict {"valore": int, "descrizione": "..."}.
+                Ritorna (val_num, val_descr) e una forma pulita 'val_clean' per il matching con le regole.
+                """
+                if isinstance(v, dict):
+                    val_num = int(v.get("valore", 0))
+                    val_descr = str(v.get("descrizione", "")).strip()
+                else:
+                    try:
+                        val_num = int(str(v).split("-")[0].strip())
+                    except Exception:
+                        val_num = 0
+                    val_descr = str(v or "").strip()
+
+                # Se la descrizione inizia con "0 -", "1 -", "2 -", estrai solo il numero
+                if val_descr and val_descr[0].isdigit():
+                    val_clean = val_descr.split("-")[0].strip().lower()
+                else:
+                    val_clean = str(val_num).strip().lower()
+
+                return val_num, val_descr, val_clean
 
             trovati = []
-            processed_morfodinamica = False
 
+            # === 3) Ciclo schede ===
             for scheda in valutazione.get("schede", []):
-                nome_ui = scheda.get("nome", "").strip().replace(" ", " ")  # normalizza anche spazi non standard
+                nome_ui = str(scheda.get("nome", "")).strip()
                 nome_json = tab_map.get(nome_ui)
-                print(f"\n=== DEBUG: scheda '{nome_ui}' → nome_json={nome_json}")
                 if not nome_json or nome_json not in rules:
                     continue
 
-                # --- Sezione speciale per PRASSIE BLF ---
+                # --- 3A) PRASSIE BLF (speciale) ---
                 if nome_json == "PRASSIE BLF":
-                    print(">>> ENTRATO NEL RAMO PRASSIE BLF <<<")
-                    combos_raw = scheda.get("combos", [])
-                    regole_scheda = rules[nome_json]
-
-                    # Estrai sempre '0', '1' o '2' come stringa
-                    def _estrai_valore(x):
-                        if isinstance(x, dict):
-                            return str(x.get("valore", "0"))
-                        s = str(x).strip()
-                        if s and s[0] in ("0", "1", "2"):
-                            return s[0]
-                        return "0"
-
-                    combos = [_estrai_valore(v) for v in combos_raw]
-
+                    # Ordine/nomi esatti come in GUI/JSON
                     labels_prassie = [
                         "Protrusione lingua",
                         "Lingua in avanti e indietro",
@@ -2255,96 +2248,174 @@ class SchedeValutazioneWindow(QWidget):
                         "Spostare il labbro a destra",
                         "Soffiare",
                         "Fischiare",
-                        "Tossire"
+                        "Tossire",
                     ]
+                    combos_raw = scheda.get("combos", [])
+                    # Normalizza a '0'/'1'/'2'
+                    def _estrai_val(x):
+                        if isinstance(x, dict):
+                            return str(x.get("valore", "0"))
+                        s = str(x or "").strip()
+                        return s[0] if s and s[0] in ("0", "1", "2") else "0"
+
+                    combos = [_estrai_val(v) for v in combos_raw]
+                    regole_scheda = rules[nome_json]
 
                     for label, val in zip(labels_prassie, combos):
-                        val_norm = str(val).strip()
-                        if not val_norm or label not in regole_scheda:
+                        if not val or label not in regole_scheda:
                             continue
-
-                        voci_rules = regole_scheda[label]
-                        for voce_attesa, regola in voci_rules.items():
-                            if val_norm == str(voce_attesa).strip():
+                        for atteso, regola in regole_scheda[label].items():
+                            if str(val).strip() == str(atteso).strip():
                                 if str(regola.get("criticita", "")).lower() == "critico":
                                     trovati.append({
                                         "scheda": nome_json,
                                         "campo": label,
-                                        "voce": val_norm,
+                                        "voce": val,
                                         "gravita": regola.get("gravita", ""),
-                                        "messaggio": regola.get("messaggio", f"{label}: risposta {val_norm}")
+                                        "messaggio": regola.get("messaggio", f"{label}: risposta {val}")
                                     })
                                 break
-
                     continue  # passa alla prossima scheda
 
-                # --- Sezione generica per tutte le altre schede ---
+                # --- 3B) MORFODINAMICA (speciale, mappa indice -> gruppo/voce) ---
+                if nome_json == "MORFODINAMICA":
+                    combos = scheda.get("combos", [])
+                    reg = rules[nome_json]
+
+                    # indice GUI -> (Gruppo nel JSON, Voce nel JSON)
+                    morfo_index_map = {
+                        # Labbra (0..4)
+                        0: ("Labbra", "Protrusione"),
+                        1: ("Labbra", "Retrazione"),
+                        2: ("Labbra", "Competenza"),
+                        3: ("Labbra", "Tono"),
+                        4: ("Labbra", "Deviazione a riposo"),
+                        # Lingua (5..14)
+                        5: ("Lingua", "Protrusione"),
+                        6: ("Lingua", "Retropulsione"),
+                        7: ("Lingua", "Lateralizzazione dx"),
+                        8: ("Lingua", "Lateralizzazione sx"),
+                        9: ("Lingua", "Trofismo"),
+                        10: ("Lingua", "Tono"),
+                        11: ("Lingua", "Forza"),
+                        12: ("Lingua", "Velocità"),
+                        13: ("Lingua", "Ampiezza movimenti"),
+                        14: ("Lingua", "Deficit di lato"),
+                        # Palato duro (15)
+                        15: ("Palato duro", "Aspetto"),
+                        # Velo del palato (16..19)
+                        16: ("Velo del palato", "Tono"),
+                        17: ("Velo del palato", "Simmetria a riposo"),
+                        18: ("Velo del palato", "Elevazione"),
+                        19: ("Velo del palato", "Iperrinofonia"),
+                        # Mandibola (20..22)
+                        20: ("Mandibola", "Deviazione in apertura"),
+                        21: ("Mandibola", "Deviazione a riposo"),
+                        22: ("Mandibola", "Tono mm masticatori"),
+                        # Elevazione laringe (23) – nel JSON è “Elevazione laringe”
+                        23: ("Elevazione laringe", None),
+                        # Sensibilità buccale (24..26)
+                        24: ("Sensibilità buccale", "Sensibilità termica"),
+                        25: ("Sensibilità buccale", "Sensibilità tattile"),
+                        26: ("Sensibilità buccale", "Sensibilità propriocettiva"),
+                    }
+
+                    for idx, valore in enumerate(combos):
+                        if idx not in morfo_index_map:
+                            continue
+                        gruppo, voce = morfo_index_map[idx]
+                        # estrai valore
+                        _, _, val_clean = estrai_numero_o_testo(valore)  # per morfo usiamo testo puro (non numeri)
+                        if not isinstance(valore, dict):
+                            val_txt = str(valore or "").strip()
+                        else:
+                            val_txt = str(valore.get("descrizione", "") or "").strip()
+                        if not val_txt:
+                            continue
+
+                        # Group “Elevazione laringe” è piatto (nessuna sotto-voce nel JSON)
+                        if voce is None:
+                            gkey = next((k for k in reg.keys() if norm(k) == norm(gruppo)), None)
+                            if not gkey or not isinstance(reg[gkey], dict):
+                                continue
+                            for atteso, regola in reg[gkey].items():
+                                if norm(val_txt) == norm(atteso):
+                                    if str(regola.get("criticita", "")).lower() == "critico":
+                                        trovati.append({
+                                            "scheda": nome_json,
+                                            "campo": "Elevazione laringe",
+                                            "voce": val_txt,
+                                            "gravita": regola.get("gravita", ""),
+                                            "messaggio": regola.get("messaggio", val_txt),
+                                        })
+                                    break
+                            continue
+
+                        # Gruppi standard (Labbra, Lingua, …)
+                        gkey = next((k for k in reg.keys() if norm(k) == norm(gruppo)), None)
+                        if not gkey or not isinstance(reg[gkey], dict):
+                            continue
+                        vkey = next((k for k in reg[gkey].keys() if norm(k) == norm(voce)), None)
+                        if not vkey:
+                            continue
+
+                        for atteso, regola in reg[gkey][vkey].items():
+                            if norm(val_txt) == norm(atteso):
+                                if str(regola.get("criticita", "")).lower() == "critico":
+                                    trovati.append({
+                                        "scheda": nome_json,
+                                        "campo": f"{gkey} → {vkey}",
+                                        "voce": val_txt,
+                                        "gravita": regola.get("gravita", ""),
+                                        "messaggio": regola.get("messaggio", val_txt),
+                                    })
+                                break
+                    continue  # passa alla prossima scheda
+
+                # --- 3C) Tutte le ALTRE schede (generico) ---
                 labels = labels_map.get(nome_json, [])
                 combos = scheda.get("combos", [])
-                regole_scheda = rules[nome_json]
+                regole_scheda = rules.get(nome_json, {})
 
                 for idx, campo in enumerate(labels):
                     if idx >= len(combos):
                         continue
-
                     valore = combos[idx]
-                    if not valore:
+                    if valore in (None, "", "--", "-", "n/d"):
                         continue
 
-                    # Estrai valore numerico e descrizione
-                    if isinstance(valore, dict):
-                        val_num = valore.get("valore", 0)
-                        val_descr = valore.get("descrizione", "").strip()
-                    if nome_json == "PRASSIE BLF":
-                        print(f"\n[DEBUG PRASSIE] campo={campo}  val_num={val_num}  val_descr='{val_descr}'")
-
-                    else:
-                        try:
-                            val_num = int(str(valore).split("-")[0].strip())
-                        except Exception:
-                            val_num = 0
-                        val_descr = str(valore).strip()
-
-                    # Normalizza chiave e cerca nel JSON
-                    campo_norm = (
-                        str(campo).lower().replace(":", "").replace("  ", " ").strip()
+                    # normalizza campo e trova la chiave più vicina nel JSON (ignora i “:” finali)
+                    found_key = next(
+                        (k for k in regole_scheda.keys() if norm(k) == norm(campo)),
+                        None
                     )
-                    found_key = None
-                    for k in regole_scheda.keys():
-                        k_norm = str(k).lower().replace(":", "").replace("  ", " ").strip()
-                        if campo_norm == k_norm:
-                            found_key = k
-                            break
+                    if not found_key:
+                        # prova varianti (campo senza “:”, con “:”, ecc.)
+                        for var in (campo, campo + ":", str(campo).replace(":", "")):
+                            found_key = next((k for k in regole_scheda.keys() if norm(k) == norm(var)), None)
+                            if found_key:
+                                break
                     if not found_key:
                         continue
 
                     voci_rules = regole_scheda[found_key]
-                    
+                    _, val_descr, val_clean = estrai_numero_o_testo(valore)
+
                     for voce_attesa, regola in voci_rules.items():
-                        voce_attesa_norm = str(voce_attesa).strip().lower()
-
-                        # 🔹 Estrai sempre la parte numerica se la descrizione inizia con "0 - ..."
-                        if isinstance(val_descr, str) and val_descr.strip() and val_descr[0].isdigit():
-                            val_clean = val_descr.split("-")[0].strip().lower()
-                        else:
-                            val_clean = str(val_num).strip().lower()
-
-                        # 🔍 DEBUG opzionale
-                        # print(f"Confronto {campo}: '{val_clean}' vs '{voce_attesa_norm}'")
-
-                        if val_clean == voce_attesa_norm:
-                            criticita = regola.get("criticita", "").lower()
-                            if criticita == "critico":
+                        if norm(val_descr) == norm(voce_attesa) or val_clean == norm(voce_attesa):
+                            if str(regola.get("criticita", "")).lower() == "critico":
                                 trovati.append({
                                     "scheda": nome_json,
-                                    "campo": campo,
-                                    "voce": val_clean,
+                                    "campo": campo.rstrip(":"),
+                                    "voce": val_descr or val_clean,
                                     "gravita": regola.get("gravita", ""),
-                                    "messaggio": regola.get("messaggio", f"{campo}: risposta {val_clean}")
+                                    "messaggio": regola.get("messaggio", val_descr or val_clean),
                                 })
                             break
 
             return trovati
+
+
 
         # estrai criticità
         critici = estrai_critici(valutazione, rules)
