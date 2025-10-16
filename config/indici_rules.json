@@ -151,12 +151,12 @@
         "Ridotta": {"criticita": "Critico"},
         "Assente": {"criticita": "Critico"}
       },
-      "Laterlizzazione dx": {
+      "Lateralizzazione dx": {
         "Adeguata": {"criticita": "Non Critico"},
         "Ridotta": {"criticita": "Critico"},
         "Assente": {"criticita": "Critico"}
       },
-      "Laterlizzazione sx": {
+      "Lateralizzazione sx": {
         "Adeguata": {"criticita": "Non Critico"},
         "Ridotta": {"criticita": "Critico"},
         "Assente": {"criticita": "Critico"}
@@ -263,42 +263,62 @@
 
   },
 "PRASSIE BLF": {
-  "Mostrare la lingua": {
+  "Protrusione lingua": {
     "0": {"criticita": "Critico"},
     "1": {"criticita": "Critico"},
     "2": {"criticita": "Non Critico"}
   },
-  "Fischio": {
+  "Lingua in avanti e indietro": {
     "0": {"criticita": "Critico"},
     "1": {"criticita": "Critico"},
     "2": {"criticita": "Non Critico"}
   },
-  "Sbadigliare": {
+  "Lingua a destra": {
     "0": {"criticita": "Critico"},
     "1": {"criticita": "Critico"},
     "2": {"criticita": "Non Critico"}
   },
-  "Toccarsi il naso con la lingua": {
+  "Lingua a sinistra": {
     "0": {"criticita": "Critico"},
     "1": {"criticita": "Critico"},
     "2": {"criticita": "Non Critico"}
   },
-  "Fare una pernacchia": {
+  "Schioccare la lingua": {
     "0": {"criticita": "Critico"},
     "1": {"criticita": "Critico"},
     "2": {"criticita": "Non Critico"}
   },
-  "Dare un bacio": {
+  "Sorridere": {
     "0": {"criticita": "Critico"},
     "1": {"criticita": "Critico"},
     "2": {"criticita": "Non Critico"}
   },
-  "Battere i denti": {
+  "Mandare un bacio": {
     "0": {"criticita": "Critico"},
     "1": {"criticita": "Critico"},
     "2": {"criticita": "Non Critico"}
   },
-  "Fare il galoppo con la lingua": {
+  "Schema alternato bacio-sorriso": {
+    "0": {"criticita": "Critico"},
+    "1": {"criticita": "Critico"},
+    "2": {"criticita": "Non Critico"}
+  },
+  "Gonfiare le guance": {
+    "0": {"criticita": "Critico"},
+    "1": {"criticita": "Critico"},
+    "2": {"criticita": "Non Critico"}
+  },
+  "Aprire e chiudere la bocca": {
+    "0": {"criticita": "Critico"},
+    "1": {"criticita": "Critico"},
+    "2": {"criticita": "Non Critico"}
+  },
+  "Spostare il labbro a sinistra": {
+    "0": {"criticita": "Critico"},
+    "1": {"criticita": "Critico"},
+    "2": {"criticita": "Non Critico"}
+  },
+  "Spostare il labbro a destra": {
     "0": {"criticita": "Critico"},
     "1": {"criticita": "Critico"},
     "2": {"criticita": "Non Critico"}
@@ -308,16 +328,18 @@
     "1": {"criticita": "Critico"},
     "2": {"criticita": "Non Critico"}
   },
-  "Schiarirsi la gola": {
+  "Fischiare": {
     "0": {"criticita": "Critico"},
     "1": {"criticita": "Critico"},
     "2": {"criticita": "Non Critico"}
   },
-  "Totale": {
-    "<17": {"criticita": "Critico"},
-    ">=17": {"criticita": "Non Critico"}
+  "Tossire": {
+    "0": {"criticita": "Critico"},
+    "1": {"criticita": "Critico"},
+    "2": {"criticita": "Non Critico"}
   }
-},
+}
+  ,
 
   "BEDSIDE": {
     "Prova 5 ml": {

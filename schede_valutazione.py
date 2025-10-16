@@ -1814,7 +1814,14 @@ class SchedeValutazioneWindow(QWidget):
 
                             # --- Sottovoce + valore ---
                             c.setFont("Helvetica", 10)
-                            c.drawString(margin + 1.0 * cm, y, f"{voce.split('(')[0].strip()}: {val_clean}")
+                            if voce.strip() == "Valutazione (elevazione laringe)":
+                                label_pulita = "Elevazione"
+                            else:
+                                label_pulita = voce.split('(')[0].strip()
+
+                            c.drawString(margin + 1.0 * cm, y, f"{label_pulita}: {val_clean}")
+
+
                             y -= 0.45 * cm
 
                             # --- Eventuale descrizione ---
@@ -2161,11 +2168,8 @@ class SchedeValutazioneWindow(QWidget):
             "Sensibilità propriocettiva"
 
         ],
-        "PRASSIE BLF": [
-            "Mostrare la lingua", "Fischio", "Sbadigliare", "Toccarsi il naso con la lingua",
-            "Fare una pernacchia", "Dare un bacio", "Battere i denti", "Fare il galoppo con la lingua",
-            "Soffiare", "Schiarirsi la gola"
-        ],
+        "PRASSIE BLF": PRASSIE_VOCI[:], # Copia la lista definita sopra
+
         "BEDSIDE": [
             "Prova 5 ml",
             "Prova 60 ml"
@@ -2213,161 +2217,72 @@ class SchedeValutazioneWindow(QWidget):
             processed_morfodinamica = False
 
             for scheda in valutazione.get("schede", []):
-                nome_ui = scheda.get("nome")
+                nome_ui = scheda.get("nome", "").strip().replace(" ", " ")  # normalizza anche spazi non standard
                 nome_json = tab_map.get(nome_ui)
+                print(f"\n=== DEBUG: scheda '{nome_ui}' → nome_json={nome_json}")
                 if not nome_json or nome_json not in rules:
                     continue
-# --- PATCH: Escludi PRASSIE BLF se disabilitato ---
+
+                # --- Sezione speciale per PRASSIE BLF ---
                 if nome_json == "PRASSIE BLF":
-                    # Se esiste un flag "abilitato" nella scheda e vale False, salta
-                    if "abilitato" in scheda and not scheda["abilitato"]:
-                        continue
-                    # Se tutte le combo sono "0" o vuote, salta (disabilitato/non editato)
-                    combos = scheda.get("combos", [])
-                    if not combos or all((str(v).strip() == "0" or not str(v).strip()) for v in combos):
-                        continue
+                    print(">>> ENTRATO NEL RAMO PRASSIE BLF <<<")
+                    combos_raw = scheda.get("combos", [])
+                    regole_scheda = rules[nome_json]
 
-                    # --- PATCH GENERALE: salta schede senza dati reali ---
-                    combos = scheda.get("combos", [])
-                    note = scheda.get("note", "").strip() if "note" in scheda else ""
-                    diagnosi = scheda.get("diagnosi", "").strip() if "diagnosi" in scheda else ""
+                    # Estrai sempre '0', '1' o '2' come stringa
+                    def _estrai_valore(x):
+                        if isinstance(x, dict):
+                            return str(x.get("valore", "0"))
+                        s = str(x).strip()
+                        if s and s[0] in ("0", "1", "2"):
+                            return s[0]
+                        return "0"
 
-                    if (not combos or all((not str(v).strip() or str(v).strip() in ("0", "/")) for v in combos)) and not note and not diagnosi:
-                        continue
-# --- FINE PATCH ---
+                    combos = [_estrai_valore(v) for v in combos_raw]
 
-                regole_scheda = rules[nome_json]
-                labels = labels_map.get(nome_json)
-                combos = scheda.get("combos", [])
-                if not labels or not combos:
-                    continue
+                    labels_prassie = [
+                        "Protrusione lingua",
+                        "Lingua in avanti e indietro",
+                        "Lingua a destra",
+                        "Lingua a sinistra",
+                        "Schioccare la lingua",
+                        "Sorridere",
+                        "Mandare un bacio",
+                        "Schema alternato bacio-sorriso",
+                        "Gonfiare le guance",
+                        "Aprire e chiudere la bocca",
+                        "Spostare il labbro a sinistra",
+                        "Spostare il labbro a destra",
+                        "Soffiare",
+                        "Fischiare",
+                        "Tossire"
+                    ]
 
-                # === MORFODINAMICA (gestione annidata, non invasiva) ===
-                if nome_json == "MORFODINAMICA":
-                    # Mappa INDICE -> (Gruppo JSON, Voce JSON) per i tuoi labels nell'ordine attuale
-                    morfo_index_map = {
-                        0: ("Labbra", "Protrusione"),
-                        1: ("Labbra", "Retrazione"),
-                        2: ("Labbra", "Competenza"),
-                        3: ("Labbra", "Tono"),
-                        4: ("Labbra", "Deviazione a riposo"),
-
-                        5: ("Lingua", "Protrusione"),
-                        6: ("Lingua", "Retropulsione"),
-                        7: ("Lingua", "Lateralizzazione dx"),
-                        8: ("Lingua", "Lateralizzazione sx"),
-                        9: ("Lingua", "Trofismo"),
-                        10: ("Lingua", "Tono"),
-                        11: ("Lingua", "Forza"),
-                        12: ("Lingua", "Velocità"),
-                        13: ("Lingua", "Ampiezza movimenti"),
-                        14: ("Lingua", "Deficit di lato"),
-
-                        15: ("Palato duro", "Aspetto"),
-
-                        16: ("Velo del palato", "Tono"),
-                        17: ("Velo del palato", "Simmetria a riposo"),
-                        18: ("Velo del palato", "Elevazione"),
-                        19: ("Velo del palato", "Iperrinofonia"),
-
-                        20: ("Mandibola", "Deviazione in apertura"),
-                        21: ("Mandibola", "Deviazione a riposo"),
-                        22: ("Mandibola", "Tono mm masticatori"),
-                        23: ("__LARINGE__", "Elevazione"),
-                        24: ("Sensibilità buccale", "Sensibilità termica"),
-                        25: ("Sensibilità buccale", "Sensibilità tattile"),
-                        26: ("Sensibilità buccale", "Sensibilità propriocettiva"),
-                    }
-
-                    # Helper: trova una chiave in modo case-insensitive e ignorando spazi doppi
-                    def _find_key(d, target):
-                        t = str(target).lower().strip().replace("  ", " ")
-                        for k in d.keys():
-                            k_norm = str(k).lower().strip().replace("  ", " ")
-                            if k_norm == t:
-                                return k
-                        return None
-
-                    # Prepara mappa etichetta->valore
-                    data_map = {i: str(v).strip() for i, v in enumerate(combos)}
-
-                    for idx, val_descr in data_map.items():
-                        if not val_descr or val_descr in ("", "0", "-", "None", "n/d"):
-                            continue
-                        if idx not in morfo_index_map:
+                    for label, val in zip(labels_prassie, combos):
+                        val_norm = str(val).strip()
+                        if not val_norm or label not in regole_scheda:
                             continue
 
-                        gruppo_raw, voce_raw = morfo_index_map[idx]
-
-                        # Gestione speciale ultimo campo (laringe)
-                        if gruppo_raw == "__LARINGE__":
-                            # Variante A: gruppo "Laringe" con sotto-voce "Elevazione"
-                            gA = _find_key(regole_scheda, "Laringe")
-                            if gA and isinstance(regole_scheda[gA], dict):
-                                vA = _find_key(regole_scheda[gA], voce_raw)  # "Elevazione"
-                                if vA:
-                                    for attesa, regola in regole_scheda[gA][vA].items():
-                                        if val_descr.lower() == str(attesa).lower():
-                                            if str(regola.get("criticita","")).lower() == "critico":
-                                                trovati.append({
-                                                    "scheda": nome_json,
-                                                    "campo": f"{gA} → {vA}",
-                                                    "voce": val_descr,
-                                                    "gravita": regola.get("gravita", ""),
-                                                    "messaggio": regola.get("messaggio", val_descr)
-                                                })
-                                    
-                                    processed_morfodinamica = True
-                                    continue  # passa al prossimo idx
-                                if nome_json == "MORFODINAMICA" and processed_morfodinamica:
-                                    continue
-
-
-                           # Variante B: gruppo diretto "Elevazione laringe"
-                            gB = _find_key(regole_scheda, "Elevazione laringe")
-                            if gB and isinstance(regole_scheda[gB], dict):
-                                for attesa, regola in regole_scheda[gB].items():
-                                    if val_descr.lower() == str(attesa).lower():
-                                        if str(regola.get("criticita","")).lower() == "critico":
-                                            trovati.append({
-                                                "scheda": nome_json,
-                                                "campo": gB,   # es. "Elevazione laringe"
-                                                "voce": val_descr,
-                                                "gravita": regola.get("gravita", ""),
-                                                "messaggio": regola.get("messaggio", val_descr)
-                                            })
-                            continue  # finito idx 23
-
-                        # Per tutti gli altri campi:
-                        gkey = _find_key(regole_scheda, gruppo_raw)
-                        if not gkey or not isinstance(regole_scheda[gkey], dict):
-                            continue
-
-                        vkey = _find_key(regole_scheda[gkey], voce_raw)
-                        if not vkey:
-                            # tenta qualche variante comune (es. "Lateralizzazione dx" vs "Laterlizzazione a dx")
-                            # NB: aggiungi qui, se nel tuo JSON ci sono refusi noti
-                            continue
-
-                        # Confronta il valore con le regole (case-insensitive)
-                        for attesa, regola in regole_scheda[gkey][vkey].items():
-                            if val_descr.lower() == str(attesa).lower():
-                                if str(regola.get("criticita","")).lower() == "critico":
+                        voci_rules = regole_scheda[label]
+                        for voce_attesa, regola in voci_rules.items():
+                            if val_norm == str(voce_attesa).strip():
+                                if str(regola.get("criticita", "")).lower() == "critico":
                                     trovati.append({
                                         "scheda": nome_json,
-                                        "campo": f"{gkey} → {vkey}",
-                                        "voce": val_descr,
+                                        "campo": label,
+                                        "voce": val_norm,
                                         "gravita": regola.get("gravita", ""),
-                                        "messaggio": regola.get("messaggio", val_descr)
+                                        "messaggio": regola.get("messaggio", f"{label}: risposta {val_norm}")
                                     })
                                 break
 
-                    # Importantissimo: non far processare MORFODINAMICA dal ramo generico
-                    continue
-                # === FINE RAMO MORFODINAMICA ===
+                    continue  # passa alla prossima scheda
 
+                # --- Sezione generica per tutte le altre schede ---
+                labels = labels_map.get(nome_json, [])
+                combos = scheda.get("combos", [])
+                regole_scheda = rules[nome_json]
 
-                
                 for idx, campo in enumerate(labels):
                     if idx >= len(combos):
                         continue
@@ -2376,14 +2291,13 @@ class SchedeValutazioneWindow(QWidget):
                     if not valore:
                         continue
 
-                    # --- PATCH MICHELANGELO: compatibilità campi con ":" finale (Sensibilità buccale ecc.) ---
-                    # Se la chiave non si trova esatta nel JSON, prova anche con ":" finale o senza
-                    campo_variants = [campo, campo + ":", campo.replace(":", "")]
-
-                    # --- Estrai descrizione e valore numerico ---
+                    # Estrai valore numerico e descrizione
                     if isinstance(valore, dict):
                         val_num = valore.get("valore", 0)
                         val_descr = valore.get("descrizione", "").strip()
+                    if nome_json == "PRASSIE BLF":
+                        print(f"\n[DEBUG PRASSIE] campo={campo}  val_num={val_num}  val_descr='{val_descr}'")
+
                     else:
                         try:
                             val_num = int(str(valore).split("-")[0].strip())
@@ -2391,65 +2305,44 @@ class SchedeValutazioneWindow(QWidget):
                             val_num = 0
                         val_descr = str(valore).strip()
 
-                    # 🔹 Normalizza la chiave del campo (per ignorare i due punti, spazi, maiuscole)
-# 🔹 Normalizza la chiave del campo (rimuove :, spazi, doppie e converte in minuscolo)
+                    # Normalizza chiave e cerca nel JSON
                     campo_norm = (
-                        str(campo)
-                        .lower()
-                        .replace(":", "")
-                        .replace("  ", " ")
-                        .strip()
+                        str(campo).lower().replace(":", "").replace("  ", " ").strip()
                     )
-
-                    # 🔹 Cerca la chiave più simile nel JSON (ignorando maiuscole e punteggiatura)
-                    # 🔹 Cerca la chiave nel JSON, tollerando ":" finale e differenze minime
                     found_key = None
-                    for variant in campo_variants:
-                        campo_norm = (
-                            str(variant)
-                            .lower()
-                            .replace(":", "")
-                            .replace("  ", " ")
-                            .strip()
-                        )
-                        for k in regole_scheda.keys():
-                            k_norm = (
-                                str(k)
-                                .lower()
-                                .replace(":", "")
-                                .replace("  ", " ")
-                                .strip()
-                            )
-                            if campo_norm == k_norm:
-                                found_key = k
-                                break
-                        if found_key:
+                    for k in regole_scheda.keys():
+                        k_norm = str(k).lower().replace(":", "").replace("  ", " ").strip()
+                        if campo_norm == k_norm:
+                            found_key = k
                             break
-
-
                     if not found_key:
                         continue
 
                     voci_rules = regole_scheda[found_key]
-
-                    # 🔹 Confronto flessibile del valore
+                    
                     for voce_attesa, regola in voci_rules.items():
                         voce_attesa_norm = str(voce_attesa).strip().lower()
-                        val_descr_norm = val_descr.lower().strip()
 
-                        if val_descr_norm == voce_attesa_norm or str(val_num) == voce_attesa_norm:
+                        # 🔹 Estrai sempre la parte numerica se la descrizione inizia con "0 - ..."
+                        if isinstance(val_descr, str) and val_descr.strip() and val_descr[0].isdigit():
+                            val_clean = val_descr.split("-")[0].strip().lower()
+                        else:
+                            val_clean = str(val_num).strip().lower()
+
+                        # 🔍 DEBUG opzionale
+                        # print(f"Confronto {campo}: '{val_clean}' vs '{voce_attesa_norm}'")
+
+                        if val_clean == voce_attesa_norm:
                             criticita = regola.get("criticita", "").lower()
                             if criticita == "critico":
                                 trovati.append({
                                     "scheda": nome_json,
                                     "campo": campo,
-                                    "voce": val_descr or str(val_num),
+                                    "voce": val_clean,
                                     "gravita": regola.get("gravita", ""),
-                                    "messaggio": regola.get("messaggio", val_descr or str(val_num))
+                                    "messaggio": regola.get("messaggio", f"{campo}: risposta {val_clean}")
                                 })
                             break
-
-
 
             return trovati
 
