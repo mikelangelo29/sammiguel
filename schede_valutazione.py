@@ -2371,6 +2371,65 @@ class SchedeValutazioneWindow(QWidget):
                                     })
                                 break
                     continue  # passa alla prossima scheda
+                
+                # --- 3B-bis) BEDSIDE Swallowing Assessment (speciale struttura annidata) ---
+                if nome_json == "BEDSIDE":
+                    regole_bedside = rules.get("BEDSIDE", {})
+                    combos = scheda.get("combos", [])
+                    if not combos:
+                        continue
+
+                    # Etichette GUI in ordine come definite nel tab Bedside
+                    etichette = [
+                        ("Prova 5 ml", None),
+                        ("Prova 60 ml", None),
+                        ("Osservazioni", "Gag reflex"),
+                        ("Osservazioni", "Elevazione laringea"),
+                        ("Osservazioni", "Tosse riflessa"),
+                        ("Osservazioni", "Saturazione"),
+                        ("Osservazioni", "Tentativi multipli"),
+                        ("Osservazioni", "Voce"),
+                        ("Osservazioni", "Segni di penetrazione e/o aspirazione"),
+                    ]
+
+                    def norm_txt(t):
+                        return t.lower().replace(" ", "").replace(":", "").strip()
+
+                    for (gruppo, voce), valore in zip(etichette, combos):
+                        val = (valore or "").strip()
+                        if not val:
+                            continue
+
+                        # Ricerca nel JSON
+                        reg = None
+                        if gruppo and voce:  # es. Osservazioni → Gag reflex
+                            if gruppo in regole_bedside and voce in regole_bedside[gruppo]:
+                                reg = regole_bedside[gruppo][voce]
+                        else:
+                            # qui gestiamo direttamente Prova 5 ml e 60 ml
+                            for chiave in regole_bedside.keys():
+                                if norm_txt(chiave) == norm_txt(gruppo):
+                                    reg = regole_bedside[chiave]
+                                    break
+
+                        if not reg:
+                            continue
+
+                        # Confronta valori
+                        for atteso, info in reg.items():
+                            if norm_txt(atteso) == norm_txt(val):
+                                if info.get("criticita", "").lower() == "critico":
+                                    trovati.append({
+                                        "scheda": "Bedside Swallowing Assessment",
+                                        "campo": gruppo if voce is None else voce,
+                                        "voce": val,
+                                        "gravita": info.get("gravita", ""),
+                                        "messaggio": info.get("messaggio", val)
+                                    })
+                                break
+                    continue
+
+
 
                 # --- 3C) Tutte le ALTRE schede (generico) ---
                 labels = labels_map.get(nome_json, [])

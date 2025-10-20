@@ -343,12 +343,12 @@
 
   "BEDSIDE": {
     "Prova 5 ml": {
-      "Superata": {"criticita": "Critico"},
-      "Non superata": {"criticita": "Non Critico"}
+      "Superata": {"criticita": "Non Critico"},
+      "Non superata": {"criticita": "Critico"}
     },
     "Prova 60 ml": {
-      "Superata": {"criticita": "Critico"},
-      "Non superata": {"criticita": "Non Critico"}
+      "Superata": {"criticita": "Non Critico"},
+      "Non superata": {"criticita": "Critico"}
     },
     "Osservazioni": {
       "Gag reflex": {
@@ -375,18 +375,18 @@
         "calo >5%": {"criticita": "Critico"}
       },
       "Tentativi multipli": {
-        "si": {"criticita": "Non Critico"},
-        "no": {"criticita": "Critico"}
+        "si": {"criticita": "Critico"},
+        "no": {"criticita": "Non Critico"}
       },
       "Voce": {
         "inalterata": {"criticita": "Non Critico"},
-        "gorgoglliante": {"criticita": "Critico"},
+        "gorgogliante": {"criticita": "Critico"},
         "strozzata": {"criticita": "Critico"},
         "velata": {"criticita": "Critico"}
       },
       "Segni di penetrazione e/o aspirazione": {
-        "si": {"criticita": "Non Critico"},
-        "no": {"criticita": "Critico"}
+        "si": {"criticita": "Critico"},
+        "no": {"criticita": "Non Critico"}
       }
     }
   },
