@@ -838,6 +838,7 @@ class SchedeValutazioneWindow(QWidget):
         note_edit.setMinimumHeight(60)
         note_edit.setMaximumHeight(120)
         note_edit.setMaximumWidth(420)
+        tab.note = note_edit 
         main_layout.addWidget(note_label)
         main_layout.addWidget(note_edit)
 
@@ -953,6 +954,24 @@ class SchedeValutazioneWindow(QWidget):
         form = QFormLayout()
         form.setVerticalSpacing(6)
         form.setContentsMargins(0, 0, 0, 0)
+
+        form = QFormLayout()
+        form.setVerticalSpacing(6)
+        form.setContentsMargins(0, 0, 0, 0)
+
+        # --- Didascalia introduttiva della scala GETS ---
+        descrizione_gets = QLabel(
+            """<b>Scala Glasgow–Edinburgh Throat Scale (GETS)</b><br>
+            Valutare ogni affermazione da <b>0</b> a <b>7</b>, dove:
+            <ul>
+                <li><b>0</b> = Per nulla / Nessun disturbo</li>
+                <li><b>7</b> = Massimo disagio percepito</li>
+            </ul>
+            """
+        )
+        descrizione_gets.setWordWrap(True)
+        descrizione_gets.setStyleSheet("font-size: 11pt; color: #333; margin-bottom: 10px;")
+        form.addRow(descrizione_gets)
 
         gets_domande = [
             "Le sembra di avere qualcosa bloccato in gola?", "Prova dolore?", "Prova fastidio/irritazione?",
@@ -1697,9 +1716,11 @@ class SchedeValutazioneWindow(QWidget):
                         
                     note = scheda.get("note", "")
                     if note and note.strip():
-                        c.setFont("Helvetica", 9)
+                        c.setFont("Helvetica-Oblique", 9)
+                        y -= 0.3*cm   
                         c.drawString(margin + 1*cm, y, f"Note: {note}")
-                        y -= 0.5*cm
+                        y -= 0.7*cm
+
                     y -= 0.2*cm
 
                 # --- OSSERVAZIONE ---
@@ -1743,9 +1764,11 @@ class SchedeValutazioneWindow(QWidget):
                     # --- Note finali ---
                     note = scheda.get("note", "")
                     if note and note.strip():
-                        c.setFont("Helvetica", 9)
+                        c.setFont("Helvetica-Oblique", 9)
+                        y -= 0.3*cm   
                         c.drawString(margin + 1*cm, y, f"Note: {note}")
-                        y -= 0.5*cm
+                        y -= 0.7*cm
+
 
                     y -= 0.2*cm
 
@@ -1850,9 +1873,11 @@ class SchedeValutazioneWindow(QWidget):
                     # --- Note finali ---
                     note = scheda.get("note", "")
                     if note and note.strip():
-                        c.setFont("Helvetica", 9)
-                        c.drawString(margin + 1 * cm, y, f"Note: {note}")
-                        y -= 0.5 * cm
+                        c.setFont("Helvetica-Oblique", 9)
+                        y -= 0.3*cm   
+                        c.drawString(margin + 1*cm, y, f"Note: {note}")
+                        y -= 0.7*cm
+
 
                     y -= 0.3 * cm
 
@@ -1884,9 +1909,11 @@ class SchedeValutazioneWindow(QWidget):
                         y -= 0.5 * cm
                     note = scheda.get("note", "")
                     if note and note.strip():
-                        c.setFont("Helvetica", 9)
+                        c.setFont("Helvetica-Oblique", 9)
+                        y -= 0.3*cm   
                         c.drawString(margin + 1*cm, y, f"Note: {note}")
-                        y -= 0.5*cm
+                        y -= 0.7*cm
+
                     y -= 0.2*cm
                                 # --- BEDSIDE ---
                 elif "Bedside" in nome_scheda:
@@ -1919,9 +1946,10 @@ class SchedeValutazioneWindow(QWidget):
 
                     note = scheda.get("note", "")
                     if note and note.strip():
-                        c.setFont("Helvetica", 9)
+                        c.setFont("Helvetica-Oblique", 9)
+                        y -= 0.3*cm   
                         c.drawString(margin + 1*cm, y, f"Note: {note}")
-                        y -= 0.5*cm
+                        y -= 0.7*cm
 
                         if y < 2 * cm:
                             c.showPage()
@@ -1956,9 +1984,11 @@ class SchedeValutazioneWindow(QWidget):
                             y -= 0.4*cm
                     note = scheda.get("note", "")
                     if note and note.strip():
-                        c.setFont("Helvetica", 9)
+                        c.setFont("Helvetica-Oblique", 9)
+                        y -= 0.3*cm   
                         c.drawString(margin + 1*cm, y, f"Note: {note}")
-                        y -= 0.5*cm
+                        y -= 0.7*cm
+
                     y -= 0.2*cm
 
                 # --- AUTOVALUTAZIONE (GETS) ---
@@ -1976,9 +2006,11 @@ class SchedeValutazioneWindow(QWidget):
 
                     note = scheda.get("note", "")
                     if note and note.strip():
-                        c.setFont("Helvetica", 9)
+                        c.setFont("Helvetica-Oblique", 9)
+                        y -= 0.3*cm   
                         c.drawString(margin + 1*cm, y, f"Note: {note}")
-                        y -= 0.5*cm
+                        y -= 0.7*cm
+
                     y -= 0.2*cm
 
                 # --- CONCLUSIONI ---
@@ -2427,6 +2459,64 @@ class SchedeValutazioneWindow(QWidget):
                                         "messaggio": info.get("messaggio", val)
                                     })
                                 break
+                    continue
+                #
+                            # --- 3B-ter) AUTOVALUTAZIONE (GETS) – gestione speciale numerica ---
+                if nome_json in ("AUTOVALUTAZIONE (GETS)", "AUTOVALUTAZIONE GETS"):
+                    regole_gets = rules.get("AUTOVALUTAZIONE (GETS)", {}).get("for ogni domanda in autovalutazione", {})
+                    combos_raw = scheda.get("combos", [])
+                    if not combos_raw or not regole_gets:
+                        continue
+
+                    # Estrazione e normalizzazione valori numerici
+                    def _estrai_val(x):
+                        if isinstance(x, dict):
+                            return str(x.get("valore", "")).strip()
+                        return str(x or "").strip()
+
+                    combos = [_estrai_val(v) for v in combos_raw]
+
+                    # Elenco delle domande (stesso ordine del tab GETS)
+                    gets_domande = [
+                        "Le sembra di avere qualcosa bloccato in gola?",
+                        "Prova dolore?",
+                        "Prova fastidio/irritazione?",
+                        "Ha difficoltà a ingoiare?",
+                        "Si sente la gola chiusa?",
+                        "Si sente la gola gonfia?",
+                        "Le sembra di avere catarro?",
+                        "Non si sente la gola libera dopo aver deglutito?",
+                        "Ha bisogno di deglutire in continuazione?",
+                        "Quando deglutisce il cibo le rimane attaccato alla gola?",
+                        "Quanto tempo trascorre a pensare alla sua gola?",
+                        "Quanto la infastidisce ciò che prova in gola?"
+                    ]
+
+                    for idx, risposta in enumerate(combos):
+                        if risposta in (None, "", "--", "-", "n/d"):
+                            continue
+                        try:
+                            val = float(risposta)
+                        except ValueError:
+                            continue
+
+                        # Applica le soglie definite nel JSON
+                        if val < 4:
+                            regola = regole_gets.get("<4", {})
+                        elif 4 <= val <= 5:
+                            regola = regole_gets.get("tra4e5", {})
+                        else:
+                            regola = regole_gets.get(">5", {})
+
+                        if regola.get("criticita", "").lower() == "critico":
+                            domanda = gets_domande[idx] if idx < len(gets_domande) else f"Domanda {idx+1}"
+                            trovati.append({
+                                "scheda": "Autovalutazione (GETS)",
+                                "campo": domanda,
+                                "voce": str(risposta),
+                                "gravita": regola.get("gravita", ""),
+                                "messaggio": regola.get("messaggio", f"Risposta: {risposta}")
+                            })
                     continue
 
 

@@ -407,7 +407,7 @@
       "si": {"criticita": "Non Critico"},
       "no": {"criticita": "Critico"}
     },
-    "Rifiuta il cibo": {
+    "Rifiuta cibo": {
       "si": {"criticita": "Critico"},
       "no": {"criticita": "Non Critico"}
     },
@@ -421,8 +421,8 @@
       "no": {"criticita": "Non Critico"}
     },
     "Protesi dentaria": {
-      "si": {"criticita": "Non Critico"},
-      "no": {"criticita": "Critico"}
+      "si": {"criticita": "Non etichettabile"},
+      "no": {"criticita": "Non etichettabile"}
     },
     "Masticazione": {
       "ridotta": {"criticita": "Critico"},
@@ -442,7 +442,7 @@
       "si": {"criticita": "Critico"},
       "no": {"criticita": "Non Critico"}
     },
-    "Comparsa di tosse riflessa": {
+    "Comparsa Tosse riflessa": {
       "si": {"criticita": "Critico"},
       "no": {"criticita": "Non Critico"}
     },
@@ -477,7 +477,7 @@
     "Durata del pasto": {
       "< 20 min": {"criticita": "Non Critico"},
       "20-30 min": {"criticita": "Non Critico"},
-      ">30 min": {"criticita": "Critico"}
+      "> 30 min": {"criticita": "Critico"}
     },
     "Assume farmaci per os durante il PASTO": {
       "si": {"criticita": "Non etichettabile"},
@@ -487,7 +487,7 @@
   "AUTOVALUTAZIONE (GETS)": {
     "for ogni domanda in autovalutazione": {
       "<4": {"criticita": "Non Critico"},
-      "4<risposta=<5": {"criticita": "Critico", "gravita": "Moderata"},
+      "tra4e5": {"criticita": "Critico", "gravita": "Moderata"},
       ">5": {"criticita": "Critico", "gravita": "Alta"}
     }
   },
