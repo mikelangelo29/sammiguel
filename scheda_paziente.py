@@ -285,6 +285,7 @@ class SchedaPazienteWindow(QWidget):
 
     # === Eliminazione selezione ===
     def elimina_selezionato(self):
+        import os
         from PyQt5.QtWidgets import QMessageBox
 
         # --- VALUTAZIONI APERTE ---
@@ -292,9 +293,10 @@ class SchedaPazienteWindow(QWidget):
             idx = self.lista_val.currentRow()
             if idx != -1 and idx < len(self.valutazioni_aperte):
                 nome = self.lista_val.item(idx).text()
-                if QMessageBox.question(self, "Conferma",
-                                        f"Eliminare la valutazione aperta:\n{nome}?",
-                                        QMessageBox.Yes | QMessageBox.No) != QMessageBox.Yes:
+                if QMessageBox.question(
+                    self, "Conferma", f"Eliminare la valutazione aperta:\n{nome}?",
+                    QMessageBox.Yes | QMessageBox.No
+                ) != QMessageBox.Yes:
                     return
                 del self.valutazioni_aperte[idx]
                 self.lista_val.takeItem(idx)
@@ -306,9 +308,10 @@ class SchedaPazienteWindow(QWidget):
             idx = self.lista_val_comp.currentRow()
             if idx != -1 and idx < len(self.valutazioni_completate):
                 nome = self.lista_val_comp.item(idx).text()
-                if QMessageBox.question(self, "Conferma",
-                                        f"Eliminare la valutazione completata:\n{nome}?",
-                                        QMessageBox.Yes | QMessageBox.No) != QMessageBox.Yes:
+                if QMessageBox.question(
+                    self, "Conferma", f"Eliminare la valutazione completata:\n{nome}?",
+                    QMessageBox.Yes | QMessageBox.No
+                ) != QMessageBox.Yes:
                     return
                 del self.valutazioni_completate[idx]
                 self.lista_val_comp.takeItem(idx)
@@ -316,14 +319,27 @@ class SchedaPazienteWindow(QWidget):
                 return
 
         # --- REPORT INDICI ---
+
         if self.lista_report_indici.selectedItems():
             idx = self.lista_report_indici.currentRow()
             if idx != -1 and idx < len(self.report_indici):
-                nome = self.lista_report_indici.item(idx).text()
-                if QMessageBox.question(self, "Conferma",
-                                        f"Eliminare il report indici:\n{nome}?",
-                                        QMessageBox.Yes | QMessageBox.No) != QMessageBox.Yes:
+                nome = self.lista_report_indici.item(idx).text().replace("⚠️", "").strip()
+                if QMessageBox.question(
+                    self, "Conferma", f"Eliminare il report indici:\n{nome}?",
+                    QMessageBox.Yes | QMessageBox.No
+                ) != QMessageBox.Yes:
                     return
+
+                # ✅ Rimozione file fisico più robusta
+                for file in os.listdir(self.cartella_report_indici):
+                    if file.startswith(f"report_indici_{nome}_") and file.endswith(".pdf"):
+                        try:
+                            os.remove(os.path.join(self.cartella_report_indici, file))
+                            print(f"DEBUG: eliminato report indici {file}")
+                        except Exception as e:
+                            QMessageBox.warning(self, "Errore", f"Impossibile eliminare il file:\n{e}")
+                        break
+
                 del self.report_indici[idx]
                 self.lista_report_indici.takeItem(idx)
                 self.salva_su_file()
@@ -333,20 +349,31 @@ class SchedaPazienteWindow(QWidget):
         if self.lista_report_completi.selectedItems():
             idx = self.lista_report_completi.currentRow()
             if idx != -1 and idx < len(self.report_completi):
-                nome = self.lista_report_completi.item(idx).text()
-                if QMessageBox.question(self, "Conferma",
-                                        f"Eliminare il report completo:\n{nome}?",
-                                        QMessageBox.Yes | QMessageBox.No) != QMessageBox.Yes:
+                nome = self.lista_report_completi.item(idx).text().replace("💾", "").strip()
+                if QMessageBox.question(
+                    self, "Conferma", f"Eliminare il report completo:\n{nome}?",
+                    QMessageBox.Yes | QMessageBox.No
+                ) != QMessageBox.Yes:
                     return
+
+                # ✅ Rimozione file fisico più robusta
+                for file in os.listdir(self.cartella_report_completi):
+                    if file.startswith(f"report_completo_{nome}_") and file.endswith(".pdf"):
+                        try:
+                            os.remove(os.path.join(self.cartella_report_completi, file))
+                            print(f"DEBUG: eliminato report completo {file}")
+                        except Exception as e:
+                            QMessageBox.warning(self, "Errore", f"Impossibile eliminare il file:\n{e}")
+                        break
+
                 del self.report_completi[idx]
                 self.lista_report_completi.takeItem(idx)
                 self.salva_su_file()
                 return
 
+
         # --- Nessuna selezione valida ---
         QMessageBox.information(self, "Selezione", "Seleziona un elemento da eliminare.")
-
-
 
 
 

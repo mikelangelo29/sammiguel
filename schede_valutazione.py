@@ -2727,14 +2727,15 @@ class SchedeValutazioneWindow(QWidget):
             QMessageBox.critical(self, "Errore PDF", str(e))
             return
 
-            # aggiorna lista in scheda paziente
-        try:
+        # --- Aggiorna lista in scheda paziente (evita duplicati) ---
+        if hasattr(parent, "aggiungi_report_indici"):
             parent.aggiungi_report_indici(data_valutazione_safe)
-        except AttributeError:
-            # se non esiste ancora la funzione, usiamo fallback
-            parent.report_indici.append(data_valutazione_safe)
-            parent.lista_report_indici.addItem(f"⚠️ {data_valutazione_safe}")
-            parent.salva_su_file()
+        else:
+            if data_valutazione_safe not in parent.report_indici:
+                parent.report_indici.append(data_valutazione_safe)
+                parent.lista_report_indici.addItem(f"⚠️ {data_valutazione_safe}")
+                parent.salva_su_file()
+
 
         QMessageBox.information(self, "Report Indici Critici", f"Creato il file:\n{percorso}")
 
