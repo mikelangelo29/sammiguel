@@ -2520,75 +2520,47 @@ class SchedeValutazioneWindow(QWidget):
                     continue
 
 
-
                 # --- 3C) Tutte le ALTRE schede (generico) ---
                 labels = labels_map.get(nome_json, [])
                 combos = scheda.get("combos", [])
                 regole_scheda = rules.get(nome_json, {})
 
-                for idx, campo in enumerate(labels):
-                    if idx >= len(combos):
-                        continue
-                    valore = combos[idx]
+                # Ciclo robusto: match testuale tra label GUI e chiavi del JSON
+                for idx, campo_label in enumerate(labels):
+                    valore = combos[idx] if idx < len(combos) else ""
                     if valore in (None, "", "--", "-", "n/d"):
                         continue
 
-                    # normalizza campo e trova la chiave più vicina nel JSON (ignora i “:” finali)
+                    # Cerca la chiave corrispondente nel JSON (tollerante ai ":" e maiuscole/minuscole)
                     found_key = next(
-                        (k for k in regole_scheda.keys() if norm(k) == norm(campo)),
+                        (k for k in regole_scheda.keys()
+                        if norm(k) == norm(campo_label)
+                        or norm(k) in norm(campo_label)
+                        or norm(campo_label) in norm(k)),
                         None
                     )
                     if not found_key:
-                        # prova varianti (campo senza “:”, con “:”, ecc.)
-                        for var in (campo, campo + ":", str(campo).replace(":", "")):
-                            found_key = next((k for k in regole_scheda.keys() if norm(k) == norm(var)), None)
-                            if found_key:
-                                break
-                    if not found_key:
+                        # Debug per capire quali non trovano corrispondenza
+                        print(f"DEBUG: Nessuna corrispondenza trovata per '{campo_label}' in {nome_json}")
                         continue
 
-                    voci_rules = regole_scheda[found_key]
+                    voci_rules = regole_scheda.get(found_key, {})
                     _, val_descr, val_clean = estrai_numero_o_testo(valore)
 
+                    # match valore ↔ voci del JSON (uso norm su entrambi)
                     for voce_attesa, regola in voci_rules.items():
-                        if norm(val_descr) == norm(voce_attesa) or val_clean == norm(voce_attesa):
+                        if norm(val_descr) == norm(voce_attesa) or norm(val_clean) == norm(voce_attesa):
                             if str(regola.get("criticita", "")).lower() == "critico":
                                 trovati.append({
                                     "scheda": nome_json,
-                                    "campo": campo.rstrip(":"),
+                                    "campo": found_key.rstrip(":"),  # label pulita per il PDF
                                     "voce": val_descr or val_clean,
                                     "gravita": regola.get("gravita", ""),
                                     "messaggio": regola.get("messaggio", val_descr or val_clean),
                                 })
                             break
 
-                    # --- Eccezione dedicata: FEES/VFSS consigliata (ultimo campo CONCLUSIONI) ---
-                    for scheda in valutazione.get("schede", []):
-                        if scheda.get("nome") == "Conclusioni":
-                            combos = scheda.get("combos", [])
-                            if combos:
-                                ultimo_valore = str(combos[-1]).strip().lower()
-                                if ultimo_valore == "sì":
-                                    # evita duplicati: controlla che non esista già una voce uguale
-                                    gia_presente = any(
-                                        c.get("scheda") == "CONCLUSIONI"
-                                        and "FEES/VFSS" in c.get("campo", "")
-                                        for c in trovati
-                                    )
-                                    if not gia_presente:
-                                        trovati.append({
-                                            "scheda": "CONCLUSIONI",
-                                            "campo": "Valutazione strumentale FEES/VFSS consigliata",
-                                            "voce": "sì",
-                                            "gravita": "",
-                                            "messaggio": "sì",
-                                        })
-                            break
-
-
-
             return trovati
-
 
 
         # estrai criticità
@@ -2646,51 +2618,90 @@ class SchedeValutazioneWindow(QWidget):
                         else 999
     )
 
-                for nome_sezione, items in sezioni.items():
-                    c.setFont("Helvetica-Bold", 12)
-                    c.drawString(margin, y, nome_sezione)
-                    y -= 0.6 * cm
-                    for item in items:
-                        campo = item.get("campo", "")
-                        messaggio = item.get("messaggio", "")
-                        gravita = item.get("gravita", "")
+                    # --- Ordine fisso delle sezioni ---
+                    ordine_sezioni = [
+                        "ANAMNESI",
+                        "OSSERVAZIONE",
+                        "MORFODINAMICA",
+                        "PRASSIE BLF",
+                        "BEDSIDE",
+                        "OSSERVAZIONE PASTO",
+                        "AUTOVALUTAZIONE (GETS)",
+                        "CONCLUSIONI"
+                    ]
 
-                        # campo in grassetto
-                        c.setFont("Helvetica-Bold", 10)
-                        c.drawString(margin + 1*cm, y, campo + ":")
-                        w = c.stringWidth(campo + ":", "Helvetica-Bold", 10)
+                    # Ricrea un dizionario ordinato in base alla lista sopra
+                    # Mantiene l'ordine desiderato ma conserva anche eventuali sezioni non elencate
+                    sezioni_ordinate = {}
+                    for nome in ordine_sezioni:
+                        if nome in sezioni:
+                            sezioni_ordinate[nome] = sezioni[nome]
+                    # aggiunge tutte le altre sezioni che non erano nella lista
+                    for k, v in sezioni.items():
+                        if k not in sezioni_ordinate:
+                            sezioni_ordinate[k] = v
 
-                        # valore e gravità in regolare
-                        c.setFont("Helvetica", 10)
-                        testo_val = messaggio
-                        if gravita:
-                            testo_val += f"  (Gravità: {gravita})"
+                    for nome_sezione, items in sezioni.items():
+                        # Titolo della sezione
+                        c.setFont("Helvetica-Bold", 12)
+                        c.drawString(margin, y, nome_sezione)
+                        y -= 0.8 * cm  # leggermente più spazio prima dei campi
 
-                        c.drawString(margin + 1*cm + w + 8, y, testo_val)
-                        y -= 0.8 * cm
+                        for item in items:
+                            campo = item.get("campo", "")
+                            messaggio = item.get("messaggio", "")
+                            gravita = item.get("gravita", "")
 
-                    # --- Se la sezione è CONCLUSIONI, aggiungi anche le Note Conclusive ---
-                    if nome_sezione == "CONCLUSIONI":
-                        note_conclusive = ""
-                        for s in valutazione.get("schede", []):
-                            if s.get("nome") == "Conclusioni":
-                                note_conclusive = s.get("note", "").strip()
-                                break
+                            # --- Controllo per salto pagina automatico ---
+                            if y < margin + 2 * cm:
+                                c.showPage()
+                                y = height - margin
+                                c.setFont("Helvetica-Bold", 12)
+                                c.drawString(margin, y, nome_sezione)
+                                y -= 0.8 * cm  # spazio dopo il titolo ristampato
 
-                        if note_conclusive:
-                            y -= 0.3 * cm
+                            # Campo
                             c.setFont("Helvetica-Bold", 10)
-                            c.drawString(margin + 0.5 * cm, y, "NOTE CONCLUSIVE:")
-                            y -= 0.4 * cm
-                            c.setFont("Helvetica", 9)
+                            c.drawString(margin + 1 * cm, y, campo + ":")
+                            w = c.stringWidth(campo + ":", "Helvetica-Bold", 10)
 
-                            from textwrap import wrap
-                            for riga in wrap(note_conclusive, width=90):
-                                c.drawString(margin + 1 * cm, y, riga)
+                            # Valore
+                            c.setFont("Helvetica", 10)
+                            testo_val = messaggio
+                            if gravita:
+                                testo_val += f"  (Gravità: {gravita})"
+                            c.drawString(margin + 1 * cm + w + 8, y, testo_val)
+                            y -= 0.8 * cm
+
+                        # --- NOTE CONCLUSIVE: una sola volta, solo dopo la sezione Conclusioni ---
+                        if nome_sezione == "CONCLUSIONI":
+                            note_conclusive = ""
+                            for s in valutazione.get("schede", []):
+                                if s.get("nome") == "Conclusioni":
+                                    note_conclusive = s.get("note", "").strip()
+                                    break
+
+                            if note_conclusive:
+                                y -= 0.6 * cm
+                                c.setFont("Helvetica-Bold", 10)
+                                c.drawString(margin + 0.5 * cm, y, "NOTE CONCLUSIVE:")
                                 y -= 0.4 * cm
+                                c.setFont("Helvetica", 9)
 
+                                from textwrap import wrap
+                                for riga in wrap(note_conclusive, width=90):
+                                    if y < margin + 2 * cm:
+                                        c.showPage()
+                                        y = height - margin
+                                        c.setFont("Helvetica-Bold", 10)
+                                        c.drawString(margin + 0.5 * cm, y, "NOTE CONCLUSIVE:")
+                                        y -= 0.4 * cm
+                                        c.setFont("Helvetica", 9)
+                                    c.drawString(margin + 1 * cm, y, riga)
+                                    y -= 0.4 * cm
 
-                    y -= 0.3 * cm  # Spazio extra tra sezioni
+                        y -= 0.4 * cm  # spazio extra tra sezioni
+
             else:
                 c.setFont("Helvetica", 11)
                 c.drawString(margin, y, "Nessuna criticità rilevata.")
