@@ -2562,6 +2562,31 @@ class SchedeValutazioneWindow(QWidget):
                                 })
                             break
 
+                    # --- Eccezione dedicata: FEES/VFSS consigliata (ultimo campo CONCLUSIONI) ---
+                    for scheda in valutazione.get("schede", []):
+                        if scheda.get("nome") == "Conclusioni":
+                            combos = scheda.get("combos", [])
+                            if combos:
+                                ultimo_valore = str(combos[-1]).strip().lower()
+                                if ultimo_valore == "sì":
+                                    # evita duplicati: controlla che non esista già una voce uguale
+                                    gia_presente = any(
+                                        c.get("scheda") == "CONCLUSIONI"
+                                        and "FEES/VFSS" in c.get("campo", "")
+                                        for c in trovati
+                                    )
+                                    if not gia_presente:
+                                        trovati.append({
+                                            "scheda": "CONCLUSIONI",
+                                            "campo": "Valutazione strumentale FEES/VFSS consigliata",
+                                            "voce": "sì",
+                                            "gravita": "",
+                                            "messaggio": "sì",
+                                        })
+                            break
+
+
+
             return trovati
 
 
@@ -2603,6 +2628,23 @@ class SchedeValutazioneWindow(QWidget):
                 sezioni = defaultdict(list)
                 for item in critici:
                     sezioni[item["scheda"]].append(item)
+                
+                # Ordina le voci della sezione CONCLUSIONI come nel tab originale
+                if "CONCLUSIONI" in sezioni:
+                    ordine_conclusioni = [
+                        "Disfagia:",
+                        "Scala DDOS:",
+                        "Consistenza liquidi suggerita:",
+                        "Modalità assunzione liquidi suggerita:",
+                        "Consistenza alimenti suggerita:",
+                        "Modalità somministrazione farmaci:",
+                        "Valutazione strumentale FEES/VFSS consigliata",
+                    ]
+                    sezioni["CONCLUSIONI"].sort(
+                        key=lambda x: ordine_conclusioni.index(x["campo"] + ":")
+                        if (x["campo"] + ":") in ordine_conclusioni
+                        else 999
+    )
 
                 for nome_sezione, items in sezioni.items():
                     c.setFont("Helvetica-Bold", 12)
@@ -2626,6 +2668,26 @@ class SchedeValutazioneWindow(QWidget):
 
                         c.drawString(margin + 1*cm + w + 8, y, testo_val)
                         y -= 0.8 * cm
+
+                    # --- Se la sezione è CONCLUSIONI, aggiungi anche le Note Conclusive ---
+                    if nome_sezione == "CONCLUSIONI":
+                        note_conclusive = ""
+                        for s in valutazione.get("schede", []):
+                            if s.get("nome") == "Conclusioni":
+                                note_conclusive = s.get("note", "").strip()
+                                break
+
+                        if note_conclusive:
+                            y -= 0.3 * cm
+                            c.setFont("Helvetica-Bold", 10)
+                            c.drawString(margin + 0.5 * cm, y, "NOTE CONCLUSIVE:")
+                            y -= 0.4 * cm
+                            c.setFont("Helvetica", 9)
+
+                            from textwrap import wrap
+                            for riga in wrap(note_conclusive, width=90):
+                                c.drawString(margin + 1 * cm, y, riga)
+                                y -= 0.4 * cm
 
 
                     y -= 0.3 * cm  # Spazio extra tra sezioni
