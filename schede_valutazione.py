@@ -2029,8 +2029,8 @@ class SchedeValutazioneWindow(QWidget):
                     note = scheda.get("note", "")
                     if note and note.strip():
                         y -= 0.3 * cm      # 👈 spazio prima della nota
-                        c.setFont("Helvetica", 9)
-                        c.drawString(margin + 1 * cm, y, f"Conclusioni: {note}")
+                        c.setFont("Helvetica-Bold", 10.5)
+                        c.drawString(margin + 1 * cm, y, f"NOTE CONCLUSIVE: {note}")
                         y -= 0.5 * cm      # 👈 spazio dopo la nota
 
                     y -= 0.5 * cm          # 👈 spazio finale di chiusura sezione
@@ -2222,7 +2222,7 @@ class SchedeValutazioneWindow(QWidget):
                     "Modalità assunzione liquidi suggerita:",
                     "Consistenza alimenti suggerita:",
                     "Modalità somministrazione farmaci:",
-                    "Valutazione strumentale FEES/VFSS consigliata:",
+                    "Valutazione strumentale FEES/VFSS consigliata:"
                 ],
             }
 
