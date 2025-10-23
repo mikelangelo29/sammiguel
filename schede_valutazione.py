@@ -1451,6 +1451,52 @@ class SchedeValutazioneWindow(QWidget):
         nome_file = f"report_completo_{data_valutazione_safe}_{timestamp_file}.pdf"
         percorso = os.path.join(parent.cartella_report_completi, nome_file)
 
+      # --- Recupera la data di nascita dal file generale pazienti.json ---
+        data_nascita = ""
+        try:
+            import json
+
+            base_dir = os.path.join(os.environ.get("LOCALAPPDATA", ""), "Franca")
+            elenco_path = os.path.join(base_dir, "pazienti.json")
+
+            if os.path.exists(elenco_path):
+                with open(elenco_path, "r", encoding="utf-8") as f:
+                    elenco = json.load(f)
+
+                nome_corrente = str(getattr(parent, "nome", "")).strip().lower()
+                cognome_corrente = str(getattr(parent, "cognome", "")).strip().lower()
+
+                for p in elenco:
+                    nome = str(p.get("nome", "")).strip().lower()
+                    cognome = str(p.get("cognome", "")).strip().lower()
+                    if nome == nome_corrente and cognome == cognome_corrente:
+                        raw_date = str(p.get("data_nascita", "")).strip()
+                        if raw_date:
+                            # Normalizza in DD/MM/YYYY
+                            if "-" in raw_date:
+                                parts = raw_date.split("-")
+                                if len(parts[0]) == 4:
+                                    raw_date = f"{parts[2]}/{parts[1]}/{parts[0]}"
+                                elif len(parts[2]) == 4:
+                                    raw_date = f"{parts[0]}/{parts[1]}/{parts[2]}"
+                            elif "/" in raw_date:
+                                parts = raw_date.split("/")
+                                if len(parts[0]) == 4:
+                                    raw_date = f"{parts[2]}/{parts[1]}/{parts[0]}"
+                            data_nascita = raw_date
+                        break
+            else:
+                print("DEBUG: pazienti.json non trovato.")
+
+        except Exception as e:
+            print(f"⚠️ Errore lettura data di nascita da pazienti.json: {e}")
+            data_nascita = ""
+        print(f"✅ parent={parent}, cartella_paziente={getattr(parent, 'cartella_paziente', 'NO')}")
+        print(f"✅ data_nascita={data_nascita}")
+        print("✅ Fine blocco data")
+
+
+#--------------------------------------------------
         try:
             from reportlab.lib.pagesizes import A4
             from reportlab.pdfgen import canvas
@@ -1616,10 +1662,13 @@ class SchedeValutazioneWindow(QWidget):
                 except Exception as e:
                     print(f"Errore caricamento logo: {e}")
 
-
-            # intestazione
+# intestazione
             c.setFont("Helvetica-Bold", 14)
-            c.drawString(margin, y, f"Report completo - {parent.nome} {parent.cognome}")
+            if data_nascita:
+                c.drawString(margin, y, f"Report completo - {parent.nome} {parent.cognome} ({data_nascita})")
+            else:
+                c.drawString(margin, y, f"Report completo - {parent.nome} {parent.cognome}")
+
             y -= 1 * cm
             c.setFont("Helvetica", 10)
             c.drawString(margin, y, f"Data valutazione: {data_valutazione}")
@@ -2134,6 +2183,8 @@ class SchedeValutazioneWindow(QWidget):
             with open(res_path("config", "indici_rules.json"), "r", encoding="utf-8") as f:
 
                 rules = json.load(f)
+                rules = rules.get("indici_rules", rules) 
+                print("DEBUG RULES KEYS:", list(rules.keys()))  # 👈 AGGIUNGI QUESTA
         except Exception as e:
             QMessageBox.critical(self, "Errore", f"Impossibile caricare le regole degli indici critici:\n{e}")
             return
@@ -2150,6 +2201,9 @@ class SchedeValutazioneWindow(QWidget):
         # funzione che valuta criticità in base al JSON
         # Copia questa funzione DENTRO crea_report_indici
         def estrai_critici(valutazione, rules):
+            print("DEBUG CHECK valori rules:", [(k, list(v.keys())[:3]) for k, v in list(rules.items())[:2]])
+
+
     # === 1) Mappe tab/etichette ===
             tab_map = {
                 "Dati Anamnestici": "ANAMNESI",
@@ -2256,6 +2310,7 @@ class SchedeValutazioneWindow(QWidget):
                 return str(s or "").lower().replace(":", "").replace("  ", " ").strip()
 
             def estrai_numero_o_testo(v):
+                print("⚙️ INIZIO estrai_critici")
                 """
                 Accetta valori stringa o dict {"valore": int, "descrizione": "..."}.
                 Ritorna (val_num, val_descr) e una forma pulita 'val_clean' per il matching con le regole.
@@ -2283,9 +2338,12 @@ class SchedeValutazioneWindow(QWidget):
             # === 3) Ciclo schede ===
             for scheda in valutazione.get("schede", []):
                 nome_ui = str(scheda.get("nome", "")).strip()
-                nome_json = tab_map.get(nome_ui)
-                if not nome_json or nome_json not in rules:
+                nome_json = tab_map.get(nome_ui.strip(), nome_ui.strip()).upper()
+
+                if nome_json not in rules:
+                    print(f"⚠️ DEBUG: Scheda '{nome_json}' non trovata in rules.json")
                     continue
+
 
                 # --- 3A) PRASSIE BLF (speciale) ---
                 if nome_json == "PRASSIE BLF":
@@ -2584,6 +2642,12 @@ class SchedeValutazioneWindow(QWidget):
                                     "messaggio": regola.get("messaggio", val_descr or val_clean),
                                 })
                             break
+                print("DEBUG TEST ─ SCHEDE PRESENTI NELLA VALUTAZIONE:")
+
+                for s in valutazione.get("schede", []):
+                    print(f"  - {s.get('nome')} → {len(s.get('combos', []))} valori, descr: {len(s.get('descrizioni', {})) if 'descrizioni' in s else 'NO'}")
+
+                print("DEBUG CHECK trovati:", trovati)
 
             return trovati
 
@@ -2591,24 +2655,25 @@ class SchedeValutazioneWindow(QWidget):
         # estrai criticità
         critici = estrai_critici(valutazione, rules)
 
-        # genera PDF
         try:
+            # genera PDF
             c = canvas.Canvas(percorso, pagesize=A4)
             width, height = A4
             margin = 2 * cm
             y = height - margin
 
-            # --- LOGO intestazione (se presente e non escluso) ---
+            # --- LOGO intestazione (facoltativo) ---
             logo_path = self.logo_path_line.text().strip()
             nessun_logo = self.no_logo_checkbox.isChecked()
             if logo_path and not nessun_logo and os.path.exists(logo_path):
                 try:
-                    c.drawImage(logo_path, margin, y-2*cm, width=(4*cm*2/3), preserveAspectRatio=True, mask='auto')
+                    c.drawImage(logo_path, margin, y - 2 * cm, width=(4 * cm * 2 / 3),
+                                preserveAspectRatio=True, mask='auto')
                     y -= 2.5 * cm  # Spazio dopo il logo
                 except Exception as e:
                     print(f"Errore caricamento logo: {e}")
 
-            # intestazione
+            # --- Intestazione ---
             c.setFont("Helvetica-Bold", 14)
             c.drawString(margin, y, f"Report Indici Critici - {parent.nome} {parent.cognome}")
             y -= 1 * cm
@@ -2620,13 +2685,14 @@ class SchedeValutazioneWindow(QWidget):
 
             from collections import defaultdict
 
+            print(f"DEBUG FINALE - Numero critici trovati: {len(critici) if critici else 0}")
+
             if critici:
-                # Raggruppa criticità per sezione/scheda
                 sezioni = defaultdict(list)
                 for item in critici:
                     sezioni[item["scheda"]].append(item)
-                
-                # Ordina le voci della sezione CONCLUSIONI come nel tab originale
+
+                # --- Ordina le voci della sezione CONCLUSIONI come nel tab originale ---
                 if "CONCLUSIONI" in sezioni:
                     ordine_conclusioni = [
                         "Disfagia:",
@@ -2641,118 +2707,113 @@ class SchedeValutazioneWindow(QWidget):
                         key=lambda x: ordine_conclusioni.index(x["campo"] + ":")
                         if (x["campo"] + ":") in ordine_conclusioni
                         else 999
-    )
+                    )
 
-                    # --- Ordine fisso delle sezioni ---
-                    ordine_sezioni = [
-                        "ANAMNESI",
-                        "OSSERVAZIONE",
-                        "MORFODINAMICA",
-                        "PRASSIE BLF",
-                        "BEDSIDE",
-                        "OSSERVAZIONE PASTO",
-                        "AUTOVALUTAZIONE (GETS)",
-                        "CONCLUSIONI"
-                    ]
+                # --- Ordine fisso delle sezioni ---
+                ordine_sezioni = [
+                    "ANAMNESI",
+                    "OSSERVAZIONE",
+                    "MORFODINAMICA",
+                    "PRASSIE BLF",
+                    "BEDSIDE",
+                    "OSSERVAZIONE PASTO",
+                    "AUTOVALUTAZIONE (GETS)",
+                    "CONCLUSIONI",
+                ]
 
-                    # Ricrea un dizionario ordinato in base alla lista sopra
-                    # Mantiene l'ordine desiderato ma conserva anche eventuali sezioni non elencate
-                    sezioni_ordinate = {}
-                    for nome in ordine_sezioni:
-                        if nome in sezioni:
-                            sezioni_ordinate[nome] = sezioni[nome]
-                    # aggiunge tutte le altre sezioni che non erano nella lista
-                    for k, v in sezioni.items():
-                        if k not in sezioni_ordinate:
-                            sezioni_ordinate[k] = v
+                sezioni_ordinate = {}
+                for nome in ordine_sezioni:
+                    if nome in sezioni:
+                        sezioni_ordinate[nome] = sezioni[nome]
+                for k, v in sezioni.items():
+                    if k not in sezioni_ordinate:
+                        sezioni_ordinate[k] = v
 
-                    for nome_sezione, items in sezioni.items():
-                        # Titolo della sezione
-                        c.setFont("Helvetica-Bold", 12)
-                        c.drawString(margin, y, nome_sezione)
-                        y -= 0.8 * cm  # leggermente più spazio prima dei campi
+                # --- Stampa ogni sezione e le sue voci ---
+                for nome_sezione, items in sezioni_ordinate.items():
+                    c.setFont("Helvetica-Bold", 12)
+                    c.drawString(margin, y, f"[{nome_sezione}]")
+                    y -= 0.8 * cm
 
-                        for item in items:
-                            campo = item.get("campo", "")
-                            messaggio = item.get("messaggio", "")
-                            gravita = item.get("gravita", "")
+                    for item in items:
+                        campo = item.get("campo", "")
+                        messaggio = item.get("messaggio", "")
+                        gravita = item.get("gravita", "")
 
-                            # --- Controllo per salto pagina automatico ---
-                            if y < margin + 2 * cm:
-                                c.showPage()
-                                y = height - margin
-                                c.setFont("Helvetica-Bold", 12)
-                                c.drawString(margin, y, nome_sezione)
-                                y -= 0.8 * cm  # spazio dopo il titolo ristampato
-
-                            # Campo
-                            c.setFont("Helvetica-Bold", 10)
-                            c.drawString(margin + 1 * cm, y, campo + ":")
-                            w = c.stringWidth(campo + ":", "Helvetica-Bold", 10)
-
-                            # Valore
-                            c.setFont("Helvetica", 10)
-                            testo_val = messaggio
-                            if gravita:
-                                testo_val += f"  (Gravità: {gravita})"
-                            c.drawString(margin + 1 * cm + w + 8, y, testo_val)
+                        if y < margin + 2 * cm:
+                            c.showPage()
+                            y = height - margin
+                            c.setFont("Helvetica-Bold", 12)
+                            c.drawString(margin, y, f"[{nome_sezione} - continua]")
                             y -= 0.8 * cm
 
-                        # --- NOTE CONCLUSIVE: una sola volta, solo dopo la sezione Conclusioni ---
-                        if nome_sezione == "CONCLUSIONI":
-                            note_conclusive = ""
-                            for s in valutazione.get("schede", []):
-                                if s.get("nome") == "Conclusioni":
-                                    note_conclusive = s.get("note", "").strip()
-                                    break
+                        c.setFont("Helvetica-Bold", 10)
+                        c.drawString(margin + 1 * cm, y, f"{campo}:")
+                        w = c.stringWidth(f"{campo}:", "Helvetica-Bold", 10)
 
-                            if note_conclusive:
-                                y -= 0.6 * cm
-                                c.setFont("Helvetica-Bold", 10)
-                                c.drawString(margin + 0.5 * cm, y, "NOTE CONCLUSIVE:")
-                                y -= 0.4 * cm
-                                c.setFont("Helvetica", 9)
+                        c.setFont("Helvetica", 10)
+                        testo_val = messaggio
+                        if gravita:
+                            testo_val += f"  (Gravità: {gravita})"
+                        c.drawString(margin + 1 * cm + w + 8, y, testo_val)
+                        y -= 0.6 * cm
 
-                                from textwrap import wrap
-                                for riga in wrap(note_conclusive, width=90):
-                                    if y < margin + 2 * cm:
-                                        c.showPage()
-                                        y = height - margin
-                                        c.setFont("Helvetica-Bold", 10)
-                                        c.drawString(margin + 0.5 * cm, y, "NOTE CONCLUSIVE:")
-                                        y -= 0.4 * cm
-                                        c.setFont("Helvetica", 9)
-                                    c.drawString(margin + 1 * cm, y, riga)
+                    # --- NOTE CONCLUSIVE: solo dopo CONCLUSIONI ---
+                    if nome_sezione == "CONCLUSIONI":
+                        note_conclusive = ""
+                        for s in valutazione.get("schede", []):
+                            if s.get("nome") == "Conclusioni":
+                                note_conclusive = s.get("note", "").strip()
+                                break
+
+                        if note_conclusive:
+                            y -= 0.6 * cm
+                            c.setFont("Helvetica-Bold", 10)
+                            c.drawString(margin + 0.5 * cm, y, "NOTE CONCLUSIVE:")
+                            y -= 0.4 * cm
+                            c.setFont("Helvetica", 9)
+
+                            from textwrap import wrap
+                            for riga in wrap(note_conclusive, width=90):
+                                if y < margin + 2 * cm:
+                                    c.showPage()
+                                    y = height - margin
+                                    c.setFont("Helvetica-Bold", 10)
+                                    c.drawString(margin + 0.5 * cm, y, "NOTE CONCLUSIVE:")
                                     y -= 0.4 * cm
+                                    c.setFont("Helvetica", 9)
+                                c.drawString(margin + 1 * cm, y, riga)
+                                y -= 0.4 * cm
 
-                        y -= 0.4 * cm  # spazio extra tra sezioni
+                    y -= 0.4 * cm
 
             else:
                 c.setFont("Helvetica", 11)
                 c.drawString(margin, y, "Nessuna criticità rilevata.")
                 y -= 1 * cm
 
-            # firma logopedista
+            # --- FIRMA LOGOPEDISTA ---
             y -= 2 * cm
             c.setFont("Helvetica", 11)
             c.drawString(margin, y, "Logopedista: _______________________________")
 
             # --- Footer con firma del programma ---
             c.setFont("Helvetica-Oblique", 8)
-            c.setFillGray(0.5)  # testo grigio tenue
+            c.setFillGray(0.5)
             footer_text = "Generato con Franca Dys © 2026"
             text_width = c.stringWidth(footer_text, "Helvetica-Oblique", 8)
             c.drawString(width - text_width - margin, margin / 2, footer_text)
-            c.setFillGray(0)  # ripristina colore testo normale
+            c.setFillGray(0)
 
+            # --- Salvataggio finale PDF ---
             c.showPage()
             c.save()
 
         except Exception as e:
-            QMessageBox.critical(self, "Errore PDF", str(e))
+            QMessageBox.critical(self, "Errore PDF", f"Errore durante la generazione del report:\n{e}")
             return
 
-        # --- Aggiorna lista in scheda paziente (evita duplicati) ---
+        # --- Aggiorna lista in scheda paziente ---
         if hasattr(parent, "aggiungi_report_indici"):
             parent.aggiungi_report_indici(data_valutazione_safe)
         else:
@@ -2760,6 +2821,8 @@ class SchedeValutazioneWindow(QWidget):
                 parent.report_indici.append(data_valutazione_safe)
                 parent.lista_report_indici.addItem(f"⚠️ {data_valutazione_safe}")
                 parent.salva_su_file()
+
+
 
 
         QMessageBox.information(self, "Report Indici Critici", f"Creato il file:\n{percorso}")
