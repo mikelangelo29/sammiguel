@@ -1833,6 +1833,30 @@ class SchedeValutazioneWindow(QWidget):
 
                     y -= 0.2 * cm
 
+# ============================================================
+#   SEZIONE: Valutazione Morfo-Dinamica
+#
+#   NOTE DI IMPLEMENTAZIONE (ottobre 2025)
+#   -------------------------------------
+#   • L’ordine e i valori delle voci sono ora coerenti con la GUI:
+#       - "Tono (lingua)" e "Forza (lingua)" erano invertiti nei dati;
+#         corretti tramite swap nel data_map dopo la creazione.
+#
+#   • Gestione delle descrizioni (campi testo associati):
+#       - Descrizioni stampate solo per le voci che dispongono
+#         realmente di un campo descrizione nel tab.
+#       - Whitelist attiva per:
+#           → LABBRA: Protrusione, Retrazione, Deviazione a riposo
+#           → MANDIBOLA: Tono mm. masticatori
+#       - Tutte le altre voci vengono escluse per evitare duplicazioni.
+#
+#   • Sensibilità buccale:
+#       - Tre campi indipendenti (termica, tattile, propriocettiva),
+#         con descrizioni individuali correttamente stampate.
+#
+#   • Questo comportamento è stato testato e validato
+#     contro la GUI completa (ottobre 2025).
+# ============================================================
 
 
                 # --- VALUTAZIONE MORFO-DINAMICA ---
@@ -1848,8 +1872,8 @@ class SchedeValutazioneWindow(QWidget):
                         ],
                         "Lingua": [
                             "Protrusione (lingua)", "Retropulsione (lingua)", "Lateralizzazione dx (lingua)",
-                            "Lateralizzazione sx (lingua)", "Trofismo (lingua)", "Forza (lingua)",
-                            "Tono (lingua)", "Velocità (lingua)", "Ampiezza movimenti (lingua)",
+                            "Lateralizzazione sx (lingua)", "Trofismo (lingua)", "Forza (lingua)", "Tono (lingua)", 
+                             "Velocità (lingua)", "Ampiezza movimenti (lingua)",
                             "Deficit di lato (lingua)"
                         ],
                         "Palato duro": ["Aspetto (palato duro)"],
@@ -1873,6 +1897,12 @@ class SchedeValutazioneWindow(QWidget):
 
                     # Mappa etichetta → valore
                     data_map = {lbl: val for lbl, val in zip(labels_morfodinamica, combos)}
+                    # --- Correzione valori invertiti in Lingua ---
+                    if "Tono (lingua)" in data_map and "Forza (lingua)" in data_map:
+                        data_map["Tono (lingua)"], data_map["Forza (lingua)"] = (
+                            data_map["Forza (lingua)"],
+                            data_map["Tono (lingua)"],
+    )
 
                     for gruppo, sotto_voci in gruppi.items():
                         # 🔹 Verifica: almeno una sottovoce compilata?
@@ -1909,21 +1939,79 @@ class SchedeValutazioneWindow(QWidget):
 
                             y -= 0.45 * cm
 
-                            # --- Eventuale descrizione ---
-                            for dk, dv in descr.items():
-                                if not dv or not dv.strip():
-                                    continue
-                                dk_norm = dk.lower().replace("descrizione", "").replace("(", "").replace(")", "").strip()
-                                voce_norm = voce.lower().replace("(", "").replace(")", "").strip()
-                                if dk_norm.startswith(voce_norm.split()[0]) or voce_norm.split()[0] in dk_norm:
-                                    dv_clean = dv.strip().replace("\u200b", "")
-                                    if dv_clean:
-                                        c.setFont("Helvetica-Oblique", 9)
-                                        c.drawString(margin + 1.8 * cm, y, dv_clean)
-                                        y -= 0.65 * cm
-                                    break
+                             # --- Eventuale descrizione ---
+                            # Costruisci una mappa voce normalizzata → descrizione
+                                                        # --- Eventuale descrizione (Morfodinamica, robusta e locale) ---
+                            def _alias_gruppo(g: str) -> str:
+                                g = g.strip()
+                                if g.lower() == "velo del palato":
+                                    return "Velo"       # nelle tue chiavi di debug c’è "Velo elevazione descrizione"
+                                return g
 
-                            # --- Controllo multipagina ---
+                            def _voce_base(gruppo: str, voce: str) -> str:
+                                v = voce.replace("(", "").replace(")", "").replace(":", "").strip()
+                                # caso speciale laringe: "Valutazione (elevazione laringe)" -> "Elevazione laringe"
+                                if gruppo.strip().lower() == "laringe" and v.lower().startswith("valutazione"):
+                                    return "Elevazione laringe"
+                                return v
+
+                            def _pick_descr(descr_dict: dict, gruppo: str, voce: str) -> str:
+                                # Normalizza e prepara tutte le chiavi candidate, in ordine di priorità
+                                g_alias = _alias_gruppo(gruppo)
+                                vb = _voce_base(gruppo, voce)
+                                vb_no_grp = vb.replace(" laringe", "").replace(" labbra", "").replace(" lingua", "").replace(" palato duro", "").replace(" velo del palato", "").strip()
+
+                                candidates = [
+                                    f"{g_alias} {vb} descrizione",
+                                    f"{gruppo} {vb} descrizione",
+                                    f"{vb} descrizione",
+                                    f"{g_alias} descrizione",
+                                    f"{g_alias} {vb_no_grp} descrizione",
+                                    f"{gruppo} {vb_no_grp} descrizione",
+                                    f"{vb_no_grp} descrizione",
+                                    f"{g_alias} descrizione generale",
+                                ]
+
+                                def norm(s: str) -> str:
+                                    return " ".join(s.lower().split())
+
+                                norm_map = {norm(k): v for k, v in descr_dict.items() if (v or "").strip()}
+                                for c in candidates:
+                                    v = norm_map.get(norm(c))
+                                    if v:
+                                        return v.strip().replace("\u200b", "")
+                                return ""
+
+                            descr_pulite = {k: (v or "").strip() for k, v in descr.items() if (v or "").strip()}
+
+                            # --- Gestione descrizione: evita copie per voci senza campo descrizione ---
+                            WHITELIST_DESCR = {
+                                "Labbra": {
+                                    "Protrusione (labbra)",
+                                    "Retrazione (labbra)",
+                                    "Deviazione a riposo (labbra)",
+                                },
+                                "Mandibola": {
+                                    "Tono mm. masticatori (mandibola)",  # unica voce con campo descrizione effettivo
+                                },
+                            }
+
+                            # 1️⃣ recupera la descrizione
+                            dv_clean = _pick_descr(descr_pulite, gruppo, voce)
+
+                            # 2️⃣ se la voce è in un gruppo con whitelist e non è ammessa, annulla la descrizione
+                            if gruppo in WHITELIST_DESCR and voce not in WHITELIST_DESCR[gruppo]:
+                                dv_clean = ""
+
+                            # 3️⃣ stampa solo se esiste davvero
+                            if dv_clean:
+                                c.setFont("Helvetica-Oblique", 9)
+                                c.drawString(margin + 1.8 * cm, y, dv_clean)
+                                y -= 0.65 * cm
+
+
+
+                           # --- Controllo multipagina ---
                             if y < 2 * cm:
                                 c.showPage()
                                 c.setFont("Helvetica", 10)
