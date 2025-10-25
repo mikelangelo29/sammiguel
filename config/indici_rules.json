@@ -186,10 +186,15 @@
         "Assente": {"criticita": "Critico"}
       },
       "Deficit di lato": {
-        "Nessuno": {"criticita": "Non Critico"},
+        "destra": {"criticita": "Critico"},
+        "Destra": {"criticita": "Critico"},
+        "sinistra": {"criticita": "Critico"},
+        "Sinistra": {"criticita": "Critico"},
         "A destra": {"criticita": "Critico"},
-        "A Sinistra": {"criticita": "Critico"}
-      }
+        "A Sinistra": {"criticita": "Critico"},
+        "nessuno": {"criticita": "Non Critico"},
+        "Nessuno": {"criticita": "Non Critico"}
+          }
     },
     "Palato duro": {
       "Aspetto": {
@@ -205,8 +210,8 @@
       },
       "Simmetria a riposo": {
         "Adeguata": {"criticita": "Non Critico"},
-        "Deviazione a dx": {"criticita": "Critico"},
-        "Deviazione a sx": {"criticita": "Critico"}
+        "Deviazione destra": {"criticita": "Critico"},
+        "Deviazione sinistra": {"criticita": "Critico"}
       },
       "Elevazione": {
         "Simmetrica": {"criticita": "Non Critico"},
@@ -446,7 +451,7 @@
       "si": {"criticita": "Critico"},
       "no": {"criticita": "Non Critico"}
     },
-    "Comparsa di tosse volontaria": {
+    "Comparsa tosse volontaria": {
       "si": {"criticita": "Critico"},
       "no": {"criticita": "Non Critico"}
     },

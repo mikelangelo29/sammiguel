@@ -888,6 +888,7 @@ class SchedeValutazioneWindow(QWidget):
 
         tab.combos = []
         tab.desc_lineedits = []
+        tab.descrizioni = {} 
 
         # Per allineare bene, calcoliamo la larghezza minima delle QLabel (la più corta possibile)
         label_width = max(QLabel(text).sizeHint().width() for text in combo_items.keys())
@@ -907,6 +908,7 @@ class SchedeValutazioneWindow(QWidget):
             desc_edit.setMinimumWidth(220)
             desc_edit.setMaximumWidth(360)
             tab.desc_lineedits.append(desc_edit)
+            tab.descrizioni[label_text.replace(":", "")] = desc_edit
 
             row_widget = QWidget()
             row_layout = QHBoxLayout(row_widget)
@@ -1935,9 +1937,29 @@ class SchedeValutazioneWindow(QWidget):
                                 label_pulita = voce.split('(')[0].strip()
 
                             c.drawString(margin + 1.0 * cm, y, f"{label_pulita}: {val_clean}")
-
-
                             y -= 0.45 * cm
+
+                            # --- 🩹 Fix locale: Ampiezza movimenti (lingua) senza descrizione ---
+                            if "ampiezza movimenti" in voce.lower() and "lingua" in gruppo.lower():
+                                for k, v in descr.items():
+                                    if "ampiezza" in k.lower() and "lingua" in k.lower() and v.strip():
+                                        c.setFont("Helvetica-Oblique", 9)
+                                        c.drawString(margin + 1.8 * cm, y, v.strip())
+                                        y -= 0.65 * cm
+                                        break
+
+
+                            # --- 🔹 Controllo margine pagina intelligente ---
+                            if y < 2 * cm:
+                                c.showPage()
+                                y = height - 2 * cm
+                                c.setFont("Helvetica-Bold", 10)
+                                # Ristampa il titolo del gruppo solo se non siamo all’inizio del gruppo
+                                if voce != sotto_voci[0]:
+                                    c.drawString(margin + 0.7 * cm, y, gruppo)
+                                    y -= 0.55 * cm
+                            
+                            
 
                              # --- Eventuale descrizione ---
                             # Costruisci una mappa voce normalizzata → descrizione
@@ -2116,37 +2138,56 @@ class SchedeValutazioneWindow(QWidget):
                 # --- OSSERVAZIONE DEL PASTO ---
                 elif nome_scheda == "Osservazione del Pasto":
                     combos = scheda.get("combos", [])
-                    for lbl, val in zip(labels_pasto, combos):
-                        if val and val.strip():
-                            _draw_label_value(y, lbl, val)
-                            y -= 0.6 * cm
-                            # 🔹 Controllo margine pagina
-                            if y < 2 * cm:
-                                c.showPage()
-                                c.setFont("Helvetica", 10)
-                                y = height - 2 * cm
+                    descr = scheda.get("descrizioni", {})
+                    labels_pasto = [
+                        "Livelli di vigilanza", "Consistenza(IDDSI)", "Autonomo", "Rifiuta cibo",
+                        "Modalità assunzione", "Edentule", "Protesi dentaria", "Masticazione",
+                        "Deglutisce senza masticare", "Fuoriuscita di cibo dalla bocca",
+                        "Fuoriuscita di cibo dal naso", "Comparsa Tosse riflessa",
+                        "Comparsa Tosse volontaria", "Si distrae continuamente",
+                        "Escursione laringea", "Voce durante/dopo pasto",
+                        "Residui orali", "Durata del pasto",
+                        "Assume farmaci per os durante il PASTO"
+                    ]
 
-                    # Descrizioni aggiuntive se presenti (non tutte le tab hanno)
-                    desc_lineedits = scheda.get("lines", [])
-                    for idx, val in enumerate(desc_lineedits):
-                        if val and val.strip():
+
+                    # 🔹 Mappa etichetta → valore combo
+                    data_map = {lbl: val for lbl, val in zip(labels_pasto, combos)}
+
+                    for lbl, val in data_map.items():
+                        val_clean = str(val).strip()
+                        if not val_clean or val_clean.lower() in ["", "none", "seleziona", "n/d", "-", "--"]:
+                            continue
+
+                        # Stampa voce e valore
+                        c.setFont("Helvetica", 10)
+                        c.drawString(margin + 0.7 * cm, y, f"{lbl}: {val_clean}")
+                        y -= 0.45 * cm
+
+                        # --- 🔹 Stampa descrizione corrispondente ---
+                        desc_key = lbl.replace(":", "")
+                        dv = descr.get(desc_key, "").strip() if descr else ""
+                        if dv:
                             c.setFont("Helvetica-Oblique", 9)
-                            try:
-                                k = labels_pasto[idx]
-                            except IndexError:
-                                k = "Campo aggiuntivo"
-                            c.drawString(margin + 1.3*cm, y, f"{k}: {val}")
-                            y -= 0.65*cm
+                            c.drawString(margin + 1.3 * cm, y, dv)
+                            y -= 0.6 * cm
+
+                        # 🔹 Controllo margine pagina
+                        if y < 3 * cm:
+                            c.showPage()
+                            c.setFont("Helvetica", 10)
+                            y = height - margin
+
+                    # --- NOTE FINALI ---
                     note = scheda.get("note", "")
                     if note and note.strip():
                         c.setFont("Helvetica-Oblique", 9)
-                        y -= 0.3*cm   
-                        c.drawString(margin + 1*cm, y, f"Note: {note}")
-                        y -= 0.7*cm
-                    if y < 3 * cm:
-                        c.showPage()
-                        y = height - margin
-                    y -= 0.2*cm
+                        y -= 0.3 * cm
+                        c.drawString(margin + 0.7 * cm, y, f"Note: {note}")
+                        y -= 0.7 * cm
+
+                    y -= 0.2 * cm
+
 
                 # --- AUTOVALUTAZIONE (GETS) ---
                 elif nome_scheda == "Autovalutazione (GETS)":
@@ -2803,11 +2844,11 @@ class SchedeValutazioneWindow(QWidget):
                     "OSSERVAZIONE",
                     "MORFODINAMICA",
                     "PRASSIE BLF",
-                    "BEDSIDE",
+                    "Bedside Swallowing Assessment",  # 👈 deve essere identico a quello in DEBUG
                     "OSSERVAZIONE PASTO",
-                    "AUTOVALUTAZIONE (GETS)",
+                    "Autovalutazione (GETS)",         # 👈 anche questo
                     "CONCLUSIONI",
-                ]
+]
 
                 sezioni_ordinate = {}
                 for nome in ordine_sezioni:
@@ -2817,10 +2858,38 @@ class SchedeValutazioneWindow(QWidget):
                     if k not in sezioni_ordinate:
                         sezioni_ordinate[k] = v
 
-                # --- Stampa ogni sezione e le sue voci ---
-                for nome_sezione, items in sezioni_ordinate.items():
+                # --- Stampa ogni sezione e le sue voci (ordine GUI garantito) ---
+                ORDINE_SEZIONI = [
+                    "Dati Anamnestici",
+                    "Osservazione",
+                    "Valutazione Morfo-Dinamica",
+                    "Prassie BLF",
+                    "Bedside Swallowing Assessment",
+                    "Osservazione del Pasto",
+                    "Autovalutazione (GETS)",
+                    "Conclusioni",
+                ]
+
+                # 🔹 Corrispondenza tra nome GUI e chiavi reali in sezioni_ordinate
+                SEZ_MAP = {
+                    "Dati Anamnestici": "ANAMNESI",
+                    "Osservazione": "OSSERVAZIONE",
+                    "Valutazione Morfo-Dinamica": "MORFODINAMICA",
+                    "Prassie BLF": "PRASSIE BLF",
+                    "Bedside Swallowing Assessment": "Bedside Swallowing Assessment",  # 🔹 esattamente come nel DEBUG
+                    "Osservazione del Pasto": "OSSERVAZIONE PASTO",
+                    "Autovalutazione (GETS)": "Autovalutazione (GETS)",               # 🔹 esattamente come nel DEBUG
+                    "Conclusioni": "CONCLUSIONI",
+                }
+
+                for nome_gui in ORDINE_SEZIONI:
+                    chiave_effettiva = SEZ_MAP.get(nome_gui, nome_gui)
+                    items = sezioni_ordinate.get(chiave_effettiva, [])
+                    if not items:
+                        continue
+
                     c.setFont("Helvetica-Bold", 12)
-                    c.drawString(margin, y, f"[{nome_sezione}]")
+                    c.drawString(margin, y, nome_gui)
                     y -= 0.8 * cm
 
                     for item in items:
@@ -2832,9 +2901,10 @@ class SchedeValutazioneWindow(QWidget):
                             c.showPage()
                             y = height - margin
                             c.setFont("Helvetica-Bold", 12)
-                            c.drawString(margin, y, f"[{nome_sezione} - continua]")
+                            c.drawString(margin, y, f"{nome_gui} (continua)")
                             y -= 0.8 * cm
 
+                        # --- singola voce ---
                         c.setFont("Helvetica-Bold", 10)
                         c.drawString(margin + 1 * cm, y, f"{campo}:")
                         w = c.stringWidth(f"{campo}:", "Helvetica-Bold", 10)
@@ -2846,8 +2916,11 @@ class SchedeValutazioneWindow(QWidget):
                         c.drawString(margin + 1 * cm + w + 8, y, testo_val)
                         y -= 0.6 * cm
 
+
                     # --- NOTE CONCLUSIVE: solo dopo CONCLUSIONI ---
-                    if nome_sezione == "CONCLUSIONI":
+                    print("\nDEBUG CHIAVI SEZIONI:", list(sezioni_ordinate.keys()))
+
+                    if nome_gui == "Conclusioni":
                         note_conclusive = ""
                         for s in valutazione.get("schede", []):
                             if s.get("nome") == "Conclusioni":
