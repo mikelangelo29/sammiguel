@@ -120,6 +120,33 @@ class SchedeValutazioneWindow(QWidget):
         layout.addLayout(logo_layout)
 
         self.carica_logo_default()
+        
+        # === Campo firma logopedista ===
+        # === Campo logopedista (stile minimal, come il logo) ===
+        firma_layout = QHBoxLayout()
+
+        self.firma_label = QLabel("Logopedista:")
+        self.firma_label.setStyleSheet("font-size: 11pt;")
+
+        self.firma_line = QLineEdit()
+        self.firma_line.setPlaceholderText("Dr.ssa / Dr. Nome Cognome")
+        self.firma_line.setFixedWidth(280)
+        self.firma_line.setStyleSheet(
+            """
+            font-size: 11pt;
+            padding: 3px 6px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            """
+        )
+
+        firma_layout.addWidget(self.firma_label)
+        firma_layout.addWidget(self.firma_line)
+        firma_layout.addStretch()
+        layout.addLayout(firma_layout)
+
+
+
 
         # Se valutazione aperta → bottoni di salvataggio
         if self.callback_salva is not None:
@@ -1151,6 +1178,12 @@ class SchedeValutazioneWindow(QWidget):
                 if hasattr(tab, "punteggio_totale_label"):
                     scheda_dati["punteggio"] = tab.punteggio_totale_label.text()
                 valutazione["schede"].append(scheda_dati)
+
+        # 🔹 Aggiungi la firma del logopedista (se presente)
+        firma = self.firma_line.text().strip()
+        if firma:
+            valutazione["firma"] = firma
+
         if not valutazione["schede"]:
             QMessageBox.warning(self, "Nessuna scheda selezionata", "Seleziona almeno una scheda da compilare!")
             return
@@ -1219,6 +1252,11 @@ class SchedeValutazioneWindow(QWidget):
                 if hasattr(tab, "punteggio_totale_label"):
                     scheda_dati["punteggio"] = tab.punteggio_totale_label.text()
                 valutazione["schede"].append(scheda_dati)
+                # 🔹 Aggiungi la firma del logopedista (se presente)
+        firma = self.firma_line.text().strip()
+        if firma:
+            valutazione["firma"] = firma
+
         if not valutazione["schede"]:
             QMessageBox.warning(self, "Nessuna scheda selezionata", "Seleziona almeno una scheda da compilare!")
             return
@@ -1308,6 +1346,13 @@ class SchedeValutazioneWindow(QWidget):
                     if getattr(tab, "punteggio_totale_label", None) is not None and "punteggio" in scheda:
                         print(f"DEBUG: set punteggio in tab {scheda['nome']}")
                         tab.punteggio_totale_label.setText(scheda["punteggio"])
+                # 🔹 Ricarica la firma del logopedista (se presente)
+        self.firma_line.setText(valutazione.get("firma", ""))
+                # 🔒 Se la valutazione è in sola lettura, blocca la firma
+        if self.callback_salva is None:
+            self.firma_line.setReadOnly(True)
+        else:
+            self.firma_line.setReadOnly(False)
 
         if self.callback_salva is None:
             by_name = {s.get("nome", ""): s for s in valutazione.get("schede", [])}
@@ -1687,12 +1732,28 @@ class SchedeValutazioneWindow(QWidget):
             
             y -= 1.0 * cm 
 
+            # --- Data valutazione (a destra) ---
             c.setFont("Helvetica", 10)
             data_text = f"Data valutazione: {data_valutazione}"
             text_width = c.stringWidth(data_text, "Helvetica", 10)
             c.drawString(width - margin - text_width, y, data_text)
+            y -= 0.6 * cm
 
-            y -= 1.0 * cm
+            # --- Logopedista (a destra, in grassetto + normale) ---
+            firma = self.firma_line.text().strip()
+            if firma:
+                label = "Logopedista: "
+                c.setFont("Helvetica-Bold", 10)
+                label_width = c.stringWidth(label, "Helvetica-Bold", 10)
+                full_text_width = c.stringWidth(label + firma, "Helvetica", 10)
+                x_pos = width - margin - full_text_width
+                c.drawString(x_pos, y, label)
+                c.setFont("Helvetica", 10)
+                c.drawString(x_pos + label_width, y, firma)
+                y -= 1.0 * cm
+            else:
+                y -= 0.8 * cm
+
 
             # --- Funzione helper per voce in grassetto + valore normale ---
             def _draw_label_value(ypos, lbl, val, size=10, xoff=1*cm):
@@ -2969,6 +3030,28 @@ class SchedeValutazioneWindow(QWidget):
             text_width = c.stringWidth(data_text, "Helvetica", 10)
             c.drawString(width - margin - text_width, y, data_text)
             y -= 1 * cm
+
+            # --- Firma logopedista (solo etichetta in grassetto, allineata a destra) ---
+            firma_logopedista = getattr(self, "firma_line", None)
+            if firma_logopedista and firma_logopedista.text().strip():
+                label_text = "Logopedista:"
+                firma_text = firma_logopedista.text().strip()
+
+                # Calcola le larghezze per allineare tutto a destra
+                label_width = c.stringWidth(label_text + " ", "Helvetica-Bold", 10)
+                firma_width = c.stringWidth(firma_text, "Helvetica", 10)
+                total_width = label_width + firma_width
+
+                # Disegna “Logopedista:” in grassetto
+                c.setFont("Helvetica-Bold", 10)
+                c.drawString(width - margin - total_width, y, label_text)
+
+                # Disegna il nome accanto, in stile normale
+                c.setFont("Helvetica", 10)
+                c.drawString(width - margin - firma_width, y, firma_text)
+
+                y -= 1.0 * cm
+
 
             from collections import defaultdict
 
