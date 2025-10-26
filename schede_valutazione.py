@@ -1653,6 +1653,20 @@ class SchedeValutazioneWindow(QWidget):
             width, height = A4
             margin = 2 * cm
             y = height - margin
+
+                        # 🔹 Funzione universale di controllo spazio pagina
+            def check_page_space(y, needed=1.0 * cm):
+                """
+                Garantisce che ci sia spazio sufficiente per stampare la prossima voce.
+                Se lo spazio è insufficiente, forza un salto pagina e riposiziona il cursore.
+                """
+                nonlocal c, height, margin
+                if y < margin + needed:
+                    c.showPage()
+                    c.setFont("Helvetica", 10)
+                    y = height - margin
+                return y
+
 # --- LOGO intestazione (se presente e non escluso) ---
             import os
             logo_path = self.logo_path_line.text().strip()
@@ -1742,17 +1756,18 @@ class SchedeValutazioneWindow(QWidget):
                 nome_scheda = scheda.get("nome", "Scheda")
                 # 🔹 Spazio extra prima del titolo per separarlo dal paragrafo precedente
                 y -= 0.5 * cm
-
-                # --- Titolo sezione ---
+                y = check_page_space(y, needed=2.5 * cm)
+                              # --- Titolo sezione ---
                 c.setFont("Helvetica-Bold", 12)
                 c.drawString(margin, y, nome_scheda)
 
                 # 🔹 Spazio dopo il titolo
                 y -= 0.8 * cm
-                
+                               
                 # --- ANAMNESI DEGLUTITORIA ---
                 
                 if nome_scheda == "Dati Anamnestici":
+                    y = check_page_space(y, needed=2.0 * cm)
                     # 🔹 Aggiungi Diagnosi se presente
                     diagnosi = scheda.get("diagnosi", "")
                     if diagnosi and diagnosi.strip():
@@ -1763,6 +1778,7 @@ class SchedeValutazioneWindow(QWidget):
                     combos = scheda.get("combos", [])
                     for lbl, val in zip(labels_anamnesi, combos):
                         if val and val.strip():
+                            y = check_page_space(y, needed=1.2 * cm)
                             _draw_label_value(y, lbl, val)
                             y -= 0.6 * cm
                     # --# 🔹 Controllo margine pagina
@@ -1781,11 +1797,19 @@ class SchedeValutazioneWindow(QWidget):
                     if y < 3 * cm:
                         c.showPage()
                         y = height - margin
+                    # 🔹 Linea separatrice tra schede (solo estetica)
+                    y = check_page_space(y, needed=0.8 * cm)
+                    c.setStrokeGray(0.85)
+                    c.line(margin, y, width - margin, y)
+                    c.setStrokeGray(0)
+                    y -= 0.4 * cm
+
                     y -= 0.2*cm
 
                 # --- OSSERVAZIONE ---
  
                 elif nome_scheda == "Osservazione":
+                    y = check_page_space(y, needed=2.0 * cm)
                     combos = scheda.get("combos", [])
                     descr = scheda.get("descrizioni", {})
 
@@ -1795,9 +1819,10 @@ class SchedeValutazioneWindow(QWidget):
                             continue
 
                         # 🔹 Etichetta + valore (allineamento uniforme con altri tab)
+
                         _draw_label_value(y, lbl, val_clean, size=10, xoff=1*cm)
                         y -= 0.5 * cm
-
+                        y = check_page_space(y, needed=1.2 * cm)
                         # 🔹 Descrizione associata (se esiste)
                         dv_clean = ""  # inizializza sempre per sicurezza
                         for dk, dv in descr.items():
@@ -1808,6 +1833,7 @@ class SchedeValutazioneWindow(QWidget):
                             if dk_norm.startswith(lbl_norm.split()[0]) or lbl_norm.split()[0] in dk_norm:
                                 dv_clean = dv.strip().replace("\u200b", "")
                                 if dv_clean:
+                                    y = check_page_space(y, needed=0.8 * cm)
                                     # descrizione più vicina al valore sopra, più distanziata dal successivo
                                     y += 0.15 * cm   # avvicina
                                     c.setFont("Helvetica-Oblique", 9)
@@ -1822,6 +1848,7 @@ class SchedeValutazioneWindow(QWidget):
                             y = height - 2 * cm
 
                     # --- Note finali ---
+                    y = check_page_space(y, needed=1.0 * cm)
                     note = scheda.get("note", "")
                     if note and note.strip():
                         c.setFont("Helvetica-Oblique", 9)
@@ -1832,6 +1859,12 @@ class SchedeValutazioneWindow(QWidget):
                     if y < 3 * cm:
                         c.showPage()
                         y = height - margin
+                    # 🔹 Linea separatrice tra schede (solo estetica)
+                    y = check_page_space(y, needed=0.8 * cm)
+                    c.setStrokeGray(0.85)
+                    c.line(margin, y, width - margin, y)
+                    c.setStrokeGray(0)
+                    y -= 0.4 * cm
 
                     y -= 0.2 * cm
 
@@ -1864,6 +1897,7 @@ class SchedeValutazioneWindow(QWidget):
                 # --- VALUTAZIONE MORFO-DINAMICA ---
                 # --- VALUTAZIONE MORFO-DINAMICA ---
                 elif nome_scheda == "Valutazione Morfo-Dinamica":
+                    y = check_page_space(y, needed=2.0 * cm)
                     combos = scheda.get("combos", [])
                     descr = scheda.get("descrizioni", {})
 
@@ -1907,6 +1941,7 @@ class SchedeValutazioneWindow(QWidget):
     )
 
                     for gruppo, sotto_voci in gruppi.items():
+                        y = check_page_space(y, needed=1.2 * cm)
                         # 🔹 Verifica: almeno una sottovoce compilata?
                         gruppo_valido = False
                         for voce in sotto_voci:
@@ -1928,16 +1963,25 @@ class SchedeValutazioneWindow(QWidget):
 
                             if not val_clean or val_clean.lower() in ["", "none", "seleziona", "n/d", "-", "--"]:
                                 continue
+                            y = check_page_space(y, needed=1.2 * cm)
 
                             # --- Sottovoce + valore ---
-                            c.setFont("Helvetica", 10)
+                            # --- Sottovoce in grassetto grigio + valore normale ---
+                            c.setFont("Helvetica-Bold", 10)
+                            c.setFillGray(0.45)
                             if voce.strip() == "Valutazione (elevazione laringe)":
                                 label_pulita = "Elevazione"
                             else:
                                 label_pulita = voce.split('(')[0].strip()
+                            c.drawString(margin + 1.0 * cm, y, f"{label_pulita}:")
+                            lbl_width = c.stringWidth(f"{label_pulita}:", "Helvetica-Bold", 10)
+                            c.setFillGray(0)
 
-                            c.drawString(margin + 1.0 * cm, y, f"{label_pulita}: {val_clean}")
+                            # valore in nero regolare accanto
+                            c.setFont("Helvetica", 10)
+                            c.drawString(margin + 1.0 * cm + lbl_width + 4, y, val_clean)
                             y -= 0.45 * cm
+
 
                             # --- 🩹 Fix locale: Ampiezza movimenti (lingua) senza descrizione ---
                             if "ampiezza movimenti" in voce.lower() and "lingua" in gruppo.lower():
@@ -2027,6 +2071,7 @@ class SchedeValutazioneWindow(QWidget):
 
                             # 3️⃣ stampa solo se esiste davvero
                             if dv_clean:
+                                y = check_page_space(y, needed=0.9 * cm)
                                 c.setFont("Helvetica-Oblique", 9)
                                 c.drawString(margin + 1.8 * cm, y, dv_clean)
                                 y -= 0.65 * cm
@@ -2045,6 +2090,7 @@ class SchedeValutazioneWindow(QWidget):
                     # --- Note finali ---
                     note = scheda.get("note", "")
                     if note and note.strip():
+                        y = check_page_space(y, needed=1.0 * cm)
                         c.setFont("Helvetica-Oblique", 9)
                         y -= 0.3*cm   
                         c.drawString(margin + 1*cm, y, f"Note: {note}")
@@ -2052,12 +2098,18 @@ class SchedeValutazioneWindow(QWidget):
                     if y < 3 * cm:
                         c.showPage()
                         y = height - margin
+                        # 🔹 Linea separatrice tra schede (solo estetica)
+                    y = check_page_space(y, needed=1.2 * cm)
+                    c.setStrokeGray(0.85)
+                    c.line(margin, y, width - margin, y)
+                    c.setStrokeGray(0)
+                    y -= 0.4 * cm
 
                     y -= 0.3 * cm
 
-
                 # --- PRASSIE BLF ---
                 elif nome_scheda == "Prassie BLF":
+                    y = check_page_space(y, needed=2.0 * cm)
                     combos = scheda.get("combos", [])
                     for lbl, item in zip(labels_prassie, combos):
                         if isinstance(item, dict):
@@ -2065,6 +2117,7 @@ class SchedeValutazioneWindow(QWidget):
                         else:
                             txt = str(item)
                         if txt and txt.strip():
+                            y = check_page_space(y, needed=1.2 * cm)
                             _draw_label_value(y, lbl, txt)
                             y -= 0.6 * cm
                               # 🔹 Controllo multipagina (fondamentale)
@@ -2075,11 +2128,13 @@ class SchedeValutazioneWindow(QWidget):
 
                     punteggio = scheda.get("punteggio", "")
                     if punteggio:
+                        y = check_page_space(y, needed=1.0 * cm)
                         c.setFont("Helvetica", 10)
                         c.drawString(margin + 1*cm, y, f"Punteggio: {punteggio}")
                         y -= 0.5 * cm
                     note = scheda.get("note", "")
                     if note and note.strip():
+                        y = check_page_space(y, needed=1.0 * cm)
                         c.setFont("Helvetica-Oblique", 9)
                         y -= 0.3*cm   
                         c.drawString(margin + 1*cm, y, f"Note: {note}")
@@ -2087,14 +2142,22 @@ class SchedeValutazioneWindow(QWidget):
                     if y < 3 * cm:
                         c.showPage()
                         y = height - margin
+                                        # 🔹 Linea separatrice tra schede (solo estetica)
+                    y = check_page_space(y, needed=0.5 * cm)
+                    c.setStrokeGray(0.85)
+                    c.line(margin, y, width - margin, y)
+                    c.setStrokeGray(0)
+                    y -= 0.4 * cm
 
                     y -= 0.2*cm
                                 # --- BEDSIDE ---
                 elif "Bedside" in nome_scheda:
+                    y = check_page_space(y, needed=2.0 * cm)
                     print("📄 BED", scheda)
                     combos = scheda.get("combos", [])
                     for lbl, val in zip(labels_bedside, combos):
                         if val and val.strip():
+                            y = check_page_space(y, needed=1.2 * cm)
                             _draw_label_value(y, lbl, val)
                             y -= 0.6 * cm
 
@@ -2108,6 +2171,7 @@ class SchedeValutazioneWindow(QWidget):
                     descr = scheda.get("descrizioni", {})
                     for k, value in descr.items():
                         if value and value.strip():
+                            y = check_page_space(y, needed=0.9 * cm)
                             c.setFont("Helvetica-Oblique", 9)
                             c.drawString(margin + 1.3*cm, y, f"{k}: {value}")
                             y -= 0.6*cm
@@ -2120,6 +2184,7 @@ class SchedeValutazioneWindow(QWidget):
 
                     note = scheda.get("note", "")
                     if note and note.strip():
+                        y = check_page_space(y, needed=1.0 * cm)
                         c.setFont("Helvetica-Oblique", 9)
                         y -= 0.3*cm   
                         c.drawString(margin + 1*cm, y, f"Note: {note}")
@@ -2132,11 +2197,19 @@ class SchedeValutazioneWindow(QWidget):
                     if y < 3 * cm:
                         c.showPage()
                         y = height - margin
+                    # 🔹 Linea separatrice tra schede (solo estetica)
+                    y = check_page_space(y, needed=0.5 * cm)
+                    c.setStrokeGray(0.85)
+                    c.line(margin, y, width - margin, y)
+                    c.setStrokeGray(0)
+                    y -= 0.4 * cm
 
-                    y -= 0.2*cm
+
+                    y -= 0.4 * cm
 
                 # --- OSSERVAZIONE DEL PASTO ---
                 elif nome_scheda == "Osservazione del Pasto":
+                    y = check_page_space(y, needed=2.0 * cm)
                     combos = scheda.get("combos", [])
                     descr = scheda.get("descrizioni", {})
                     labels_pasto = [
@@ -2158,16 +2231,17 @@ class SchedeValutazioneWindow(QWidget):
                         val_clean = str(val).strip()
                         if not val_clean or val_clean.lower() in ["", "none", "seleziona", "n/d", "-", "--"]:
                             continue
+                        y = check_page_space(y, needed=1.2 * cm)
 
-                        # Stampa voce e valore
-                        c.setFont("Helvetica", 10)
-                        c.drawString(margin + 0.7 * cm, y, f"{lbl}: {val_clean}")
-                        y -= 0.45 * cm
+                        # Stampa voce e valore (in grassetto come gli altri tab)
+                        _draw_label_value(y, lbl, val_clean, size=10, xoff=0.7 * cm)
+                        y -= 0.6 * cm
 
                         # --- 🔹 Stampa descrizione corrispondente ---
                         desc_key = lbl.replace(":", "")
                         dv = descr.get(desc_key, "").strip() if descr else ""
                         if dv:
+                            y = check_page_space(y, needed=0.9 * cm)
                             c.setFont("Helvetica-Oblique", 9)
                             c.drawString(margin + 1.3 * cm, y, dv)
                             y -= 0.6 * cm
@@ -2181,19 +2255,28 @@ class SchedeValutazioneWindow(QWidget):
                     # --- NOTE FINALI ---
                     note = scheda.get("note", "")
                     if note and note.strip():
+                        y = check_page_space(y, needed=1.0 * cm)
                         c.setFont("Helvetica-Oblique", 9)
                         y -= 0.3 * cm
                         c.drawString(margin + 0.7 * cm, y, f"Note: {note}")
                         y -= 0.7 * cm
+                    # 🔹 Linea separatrice tra schede (solo estetica)
+                    y = check_page_space(y, needed=0.5 * cm)
+                    c.setStrokeGray(0.85)
+                    c.line(margin, y, width - margin, y)
+                    c.setStrokeGray(0)
+                    y -= 0.4 * cm
 
                     y -= 0.2 * cm
 
 
                 # --- AUTOVALUTAZIONE (GETS) ---
                 elif nome_scheda == "Autovalutazione (GETS)":
+                    y = check_page_space(y, needed=2.0 * cm)
                     combos = scheda.get("combos", [])
                     for lbl, val in zip(labels_gets, combos):
                         if val and val.strip() and val != "0":
+                            y = check_page_space(y, needed=1.2 * cm)
                             _draw_label_value(y, lbl, val)
                             y -= 0.6 * cm
                             # 🔹 Controllo margine pagina
@@ -2204,6 +2287,7 @@ class SchedeValutazioneWindow(QWidget):
 
                     note = scheda.get("note", "")
                     if note and note.strip():
+                        y = check_page_space(y, needed=1.0 * cm)
                         c.setFont("Helvetica-Oblique", 9)
                         y -= 0.3*cm   
                         c.drawString(margin + 1*cm, y, f"Note: {note}")
@@ -2211,14 +2295,22 @@ class SchedeValutazioneWindow(QWidget):
                     if y < 3 * cm:
                         c.showPage()
                         y = height - margin
+                    # 🔹 Linea separatrice tra schede (solo estetica)
+                    y = check_page_space(y, needed=0.5 * cm)
+                    c.setStrokeGray(0.85)
+                    c.line(margin, y, width - margin, y)
+                    c.setStrokeGray(0)
+                    y -= 0.4 * cm
 
                     y -= 0.2*cm
 
                 # --- CONCLUSIONI ---
                 elif nome_scheda == "Conclusioni":
+                    y = check_page_space(y, needed=2.0 * cm)
                     combos = scheda.get("combos", [])
                     for lbl, val in zip(labels_conclusioni, combos):
                         if val and val.strip():
+                            y = check_page_space(y, needed=1.2 * cm)
                             _draw_label_value(y, lbl, val)
                             y -= 0.6 * cm   # 👈 aggiungi sempre questo per separare le righe
                             # 🔹 Controllo margine pagina
@@ -2229,13 +2321,31 @@ class SchedeValutazioneWindow(QWidget):
 
                     note = scheda.get("note", "")
                     if note and note.strip():
-                        y -= 0.3 * cm      # 👈 spazio prima della nota
+                        y -= 0.3 * cm  # spazio prima della sezione
+
+                        # --- Titolo in grassetto ---
                         c.setFont("Helvetica-Bold", 10.5)
-                        c.drawString(margin + 1 * cm, y, f"NOTE CONCLUSIVE: {note}")
-                        y -= 0.5 * cm      # 👈 spazio dopo la nota
+                        c.drawString(margin + 1 * cm, y, "NOTE CONCLUSIVE:")
+                        y -= 0.5 * cm
+
+                        # --- Testo normale ---
+                        c.setFont("Helvetica", 10.5)
+                        from textwrap import wrap
+                        for riga in wrap(note, width=95):
+                            if y < margin + 2 * cm:
+                                c.showPage()
+                                y = height - margin
+                                c.setFont("Helvetica-Bold", 10.5)
+                                c.drawString(margin + 1 * cm, y, "NOTE CONCLUSIVE:")
+                                y -= 0.5 * cm
+                                c.setFont("Helvetica", 10.5)
+                            c.drawString(margin + 1.3 * cm, y, riga)
+                            y -= 0.5 * cm
+
                     if y < 3 * cm:
                         c.showPage()
                         y = height - margin
+
                     y -= 0.5 * cm          # 👈 spazio finale di chiusura sezione
 
 
@@ -2323,6 +2433,8 @@ class SchedeValutazioneWindow(QWidget):
             from reportlab.lib.pagesizes import A4
             from reportlab.pdfgen import canvas
             from reportlab.lib.units import cm
+            # --- Funzione locale di controllo pagina ---
+ 
         except ImportError:
             QMessageBox.critical(self, "Reportlab mancante", "Installa con: pip install reportlab")
             return
@@ -2783,6 +2895,21 @@ class SchedeValutazioneWindow(QWidget):
 
         # estrai criticità
         critici = estrai_critici(valutazione, rules)
+                # --- Funzione locale: controllo salto pagina per report indici ---
+        def check_page_space_indici(c, y, height, margin, needed=2.0 * cm, titolo=None):
+            """
+            Controlla se resta spazio sufficiente nella pagina.
+            Se non c’è, crea una nuova pagina e ristampa il titolo (se fornito).
+            Versione dedicata a crea_report_indici().
+            """
+            if y - needed < margin + 1.5 * cm:
+                c.showPage()
+                y = height - margin
+                if titolo:
+                    c.setFont("Helvetica-Bold", 12)
+                    c.drawString(margin, y, f"{titolo} (continua)")
+                    y -= 0.8 * cm
+            return y
 
         try:
             # genera PDF
@@ -2888,11 +3015,14 @@ class SchedeValutazioneWindow(QWidget):
                     if not items:
                         continue
 
+                    y = check_page_space_indici(c, y, height, margin, needed=2.5 * cm, titolo=nome_gui)
+
                     c.setFont("Helvetica-Bold", 12)
                     c.drawString(margin, y, nome_gui)
                     y -= 0.8 * cm
 
                     for item in items:
+                        y = check_page_space_indici(c, y, height, margin, needed=1.2 * cm)
                         campo = item.get("campo", "")
                         messaggio = item.get("messaggio", "")
                         gravita = item.get("gravita", "")
@@ -2929,22 +3059,29 @@ class SchedeValutazioneWindow(QWidget):
 
                         if note_conclusive:
                             y -= 0.6 * cm
-                            c.setFont("Helvetica-Bold", 10)
-                            c.drawString(margin + 0.5 * cm, y, "NOTE CONCLUSIVE:")
-                            y -= 0.4 * cm
-                            c.setFont("Helvetica", 9)
 
+                            # Titolo in grassetto
+                            c.setFont("Helvetica-Bold", 10.5)
+                            c.drawString(margin + 1 * cm, y, "NOTE CONCLUSIVE:")
+                            y -= 0.5 * cm
+
+                            # Testo normale
+                            c.setFont("Helvetica", 10.5)
                             from textwrap import wrap
-                            for riga in wrap(note_conclusive, width=90):
+                            for riga in wrap(note_conclusive, width=95):
                                 if y < margin + 2 * cm:
                                     c.showPage()
                                     y = height - margin
-                                    c.setFont("Helvetica-Bold", 10)
-                                    c.drawString(margin + 0.5 * cm, y, "NOTE CONCLUSIVE:")
-                                    y -= 0.4 * cm
-                                    c.setFont("Helvetica", 9)
-                                c.drawString(margin + 1 * cm, y, riga)
-                                y -= 0.4 * cm
+                                    c.setFont("Helvetica-Bold", 10.5)
+                                    c.drawString(margin + 1 * cm, y, "NOTE CONCLUSIVE:")
+                                    y -= 0.5 * cm
+                                    c.setFont("Helvetica", 10.5)
+                                c.drawString(margin + 1.3 * cm, y, riga)
+                                y -= 0.5 * cm
+
+                            y -= 0.4 * cm
+                            c.setFont("Helvetica", 9)
+
 
                     y -= 0.4 * cm
 
