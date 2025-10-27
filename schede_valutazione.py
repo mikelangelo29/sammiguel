@@ -1695,6 +1695,24 @@ class SchedeValutazioneWindow(QWidget):
 
         try:
             c = canvas.Canvas(percorso, pagesize=A4)
+            from reportlab.lib.pagesizes import A4
+
+            # --- Funzione per disegnare lo sfondo avorio su ogni pagina ---
+            def _apply_bg(canv):
+                canv.setFillColorRGB(0.98, 0.97, 0.95)  # avorio chiaro (#FAF7F2)
+                canv.rect(0, 0, A4[0], A4[1], fill=1, stroke=0)
+                canv.setFillColorRGB(0, 0, 0)  # ripristina il colore testo nero
+
+            # Disegna subito lo sfondo sulla prima pagina
+            _apply_bg(c)
+
+            # Intercetta showPage per applicare lo sfondo automaticamente alle successive
+            _original_showPage = c.showPage
+            def _showPage_with_bg():
+                _original_showPage()
+                _apply_bg(c)
+            c.showPage = _showPage_with_bg
+
             width, height = A4
             margin = 2 * cm
             y = height - margin
@@ -1732,12 +1750,26 @@ class SchedeValutazioneWindow(QWidget):
             
             y -= 1.0 * cm 
 
-            # --- Data valutazione (a destra) ---
+            # --- Data valutazione (a destra, con etichetta in grassetto) ---
+            label = "Data valutazione:"
+            c.setFont("Helvetica-Bold", 10)
+            label_width = c.stringWidth(label, "Helvetica-Bold", 10)
+
             c.setFont("Helvetica", 10)
-            data_text = f"Data valutazione: {data_valutazione}"
-            text_width = c.stringWidth(data_text, "Helvetica", 10)
-            c.drawString(width - margin - text_width, y, data_text)
+            date_width = c.stringWidth(data_valutazione, "Helvetica", 10)
+
+            # calcola posizione totale per mantenere allineamento a destra
+            total_width = label_width + 4 + date_width  # 4 = piccolo spazio tra label e data
+            x_pos = width - margin - total_width
+
+            # disegna etichetta + data
+            c.setFont("Helvetica-Bold", 10)
+            c.drawString(x_pos, y, label)
+            c.setFont("Helvetica", 10)
+            c.drawString(x_pos + label_width + 4, y, data_valutazione)
+
             y -= 0.6 * cm
+
 
             # --- Logopedista (a destra, in grassetto + normale) ---
             firma = self.firma_line.text().strip()
@@ -1750,8 +1782,16 @@ class SchedeValutazioneWindow(QWidget):
                 c.drawString(x_pos, y, label)
                 c.setFont("Helvetica", 10)
                 c.drawString(x_pos + label_width, y, firma)
-                y -= 1.0 * cm
+                # --- Linea di separazione subito sotto la firma ---
+                c.setStrokeColorRGB(0.7, 0.7, 0.7)
+                c.setLineWidth(0.5)
+                c.line(margin, y - 0.25 * cm, width - margin, y - 0.25 * cm)
+                y -= 0.5 * cm  # spazio dopo la linea
             else:
+                # anche se non c'è firma, disegna comunque la linea per coerenza visiva
+                c.setStrokeColorRGB(0.7, 0.7, 0.7)
+                c.setLineWidth(0.5)
+                c.line(margin, y - 0.25 * cm, width - margin, y - 0.25 * cm)
                 y -= 0.8 * cm
 
 
@@ -2425,12 +2465,10 @@ class SchedeValutazioneWindow(QWidget):
                         c.setFont("Helvetica", 10.5)
                         from textwrap import wrap
                         for riga in wrap(note, width=95):
+                        
                             if y < margin + 2 * cm:
                                 c.showPage()
                                 y = height - margin
-                                c.setFont("Helvetica-Bold", 10.5)
-                                c.drawString(margin + 1 * cm, y, "NOTE CONCLUSIVE:")
-                                y -= 0.5 * cm
                                 c.setFont("Helvetica", 10.5)
                             c.drawString(margin + 2.3 * cm, y, riga)
                             y -= 0.5 * cm
@@ -2470,7 +2508,8 @@ class SchedeValutazioneWindow(QWidget):
             c.drawString(width - text_width - margin, margin / 2, footer_text)
             c.setFillGray(0)  # ripristina colore testo normale
 
-            c.showPage()
+            if not c._code:  # se l'ultima pagina non contiene comandi grafici
+                c._pageNumber -= 1
             c.save()
 
         except Exception as e:
@@ -2720,7 +2759,7 @@ class SchedeValutazioneWindow(QWidget):
                                         "campo": label,
                                         "voce": val,
                                         "gravita": regola.get("gravita", ""),
-                                        "messaggio": regola.get("messaggio", f"{label}: risposta {val}")
+                                        "messaggio": regola.get("messaggio", f"risposta {val}")
                                     })
                                 break
                     continue  # passa alla prossima scheda
@@ -3006,9 +3045,29 @@ class SchedeValutazioneWindow(QWidget):
         try:
             # genera PDF
             c = canvas.Canvas(percorso, pagesize=A4)
+            from reportlab.lib.pagesizes import A4
+
+            # --- Funzione per disegnare lo sfondo avorio su ogni pagina ---
+            def _apply_bg(canv):
+                canv.setFillColorRGB(0.98, 0.97, 0.95)  # avorio chiaro (#FAF7F2)
+                canv.rect(0, 0, A4[0], A4[1], fill=1, stroke=0)
+                canv.setFillColorRGB(0, 0, 0)  # ripristina il testo nero
+
+            # Disegna subito lo sfondo sulla prima pagina
+            _apply_bg(c)
+
+            # Intercetta showPage per applicare lo sfondo automaticamente alle successive
+            _original_showPage = c.showPage
+            def _showPage_with_bg():
+                _original_showPage()
+                _apply_bg(c)
+            c.showPage = _showPage_with_bg
+
             width, height = A4
             margin = 2 * cm
             y = height - margin
+
+        
 
             # --- LOGO intestazione (facoltativo) ---
             logo_path = self.logo_path_line.text().strip()
@@ -3025,11 +3084,26 @@ class SchedeValutazioneWindow(QWidget):
             c.setFont("Helvetica-Bold", 14)
             c.drawString(margin, y, f"Report Indici Critici - {parent.nome} {parent.cognome}")
             y -= 1 * cm
+            
+            # --- Data valutazione (a destra, con etichetta in grassetto) ---
+            label = "Data valutazione:"
+            c.setFont("Helvetica-Bold", 10)
+            label_width = c.stringWidth(label, "Helvetica-Bold", 10)
+
             c.setFont("Helvetica", 10)
-            data_text = f"Data valutazione: {data_valutazione}"
-            text_width = c.stringWidth(data_text, "Helvetica", 10)
-            c.drawString(width - margin - text_width, y, data_text)
-            y -= 1 * cm
+            date_width = c.stringWidth(data_valutazione, "Helvetica", 10)
+
+            # calcola posizione totale per mantenere l’allineamento a destra
+            total_width = label_width + 4 + date_width  # 4 = piccolo spazio tra label e data
+            x_pos = width - margin - total_width
+
+            # disegna etichetta + data
+            c.setFont("Helvetica-Bold", 10)
+            c.drawString(x_pos, y, label)
+            c.setFont("Helvetica", 10)
+            c.drawString(x_pos + label_width + 4, y, data_valutazione)
+
+            y -= 0.6 * cm
 
             # --- Firma logopedista (solo etichetta in grassetto, allineata a destra) ---
             firma_logopedista = getattr(self, "firma_line", None)
@@ -3050,7 +3124,15 @@ class SchedeValutazioneWindow(QWidget):
                 c.setFont("Helvetica", 10)
                 c.drawString(width - margin - firma_width, y, firma_text)
 
-                y -= 1.0 * cm
+                y -= 0.4 * cm
+
+
+            # --- Linea subito dopo la firma, perfettamente allineata ---
+            c.setStrokeColorRGB(0.7, 0.7, 0.7)
+            c.setLineWidth(0.5)
+            c.line(margin, y - 0.25 * cm, width - margin, y - 0.25 * cm)
+
+            y -= 1.0 * cm  # ora si abbassa solo dopo la linea
 
 
             from collections import defaultdict
@@ -3218,10 +3300,24 @@ class SchedeValutazioneWindow(QWidget):
             c.setFillGray(0)
 
             # --- Salvataggio finale PDF ---
-            c.showPage()
+            if not c._code:  # se l'ultima pagina è vuota, non la salva
+                c._pageNumber -= 1
             c.save()
+# --- DEBUG: verifica se il PDF è stato creato realmente ---
+# --- Attesa e controllo del file salvato ---
+            import os, time
+            time.sleep(0.3)  # attende 3 decimi di secondo per sicurezza
+            os.makedirs(os.path.dirname(percorso), exist_ok=True)
+            if os.path.exists(percorso):
+                print(f"✅ [DEBUG] Report critici salvato correttamente in: {percorso}")
+            else:
+                print(f"❌ [DEBUG] File non trovato dopo c.save() — ritardo o percorso inesistente.")
 
+                        
         except Exception as e:
+            import traceback
+            err = traceback.format_exc()
+            print(f"❌ [DEBUG] ECCEZIONE DURANTE GENERAZIONE PDF:\n{err}")
             QMessageBox.critical(self, "Errore PDF", f"Errore durante la generazione del report:\n{e}")
             return
 
