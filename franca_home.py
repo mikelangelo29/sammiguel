@@ -257,7 +257,7 @@ if __name__ == "__main__":
     win = HomeFranca()
     win.show()
 
-    print("DEBUG → stato finale licenza_valida:", licenza.licenza_valida)
+    #print("DEBUG → stato finale licenza_valida:", licenza.licenza_valida)
     sys.exit(app.exec_())
 
 

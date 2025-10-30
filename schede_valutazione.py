@@ -483,7 +483,7 @@ class SchedeValutazioneWindow(QWidget):
 
 
     def tab_morfodinamica(self, base_font, section_font):
-        print(">>> DEBUG: funzione tab_morfodinamica eseguita!")
+        #print(">>> DEBUG: funzione tab_morfodinamica eseguita!")
         from PyQt5.QtWidgets import QScrollArea, QSizePolicy
 
         tab = QWidget()
@@ -655,7 +655,7 @@ class SchedeValutazioneWindow(QWidget):
         ]
 
         add_grid_rows(sensibilita_grid, sensibilita_fields)
-        print("DEBUG Sensibilità combobox aggiunte:", len(tab.combos))
+        #print("DEBUG Sensibilità combobox aggiunte:", len(tab.combos))
         sensibilita_box.setLayout(sensibilita_grid)
         layout.addWidget(sensibilita_box)
 
@@ -1267,7 +1267,7 @@ class SchedeValutazioneWindow(QWidget):
         self.close()
         
     def carica_valutazione(self, valutazione):
-        print("DEBUG: valutazione che arriva:", valutazione)
+        #print("DEBUG: valutazione che arriva:", valutazione)
         if not isinstance(valutazione, dict):
             QMessageBox.warning(self, "Valutazione non valida", "Il dato selezionato non è una valutazione valida.")
             return
@@ -1276,11 +1276,11 @@ class SchedeValutazioneWindow(QWidget):
          #   cb.setChecked(False)
             
         for scheda in valutazione.get("schede", []):
-            print("DEBUG: scheda trovata:", scheda.get("nome", ""))
+            #print("DEBUG: scheda trovata:", scheda.get("nome", ""))
             for tab_idx in range(self.tab_widget.count()):
-                print("DEBUG: tab corrente:", self.tab_widget.tabText(tab_idx))
+                #print("DEBUG: tab corrente:", self.tab_widget.tabText(tab_idx))
                 if self.tab_widget.tabText(tab_idx) == scheda["nome"]:
-                    print("DEBUG: Match trovato! Carico valori su tab:", scheda["nome"])
+                    #print("DEBUG: Match trovato! Carico valori su tab:", scheda["nome"])
                     tab = self.tab_forms[tab_idx]
        
                     if hasattr(tab, "combos") and "combos" in scheda and tab.combos is not None:
@@ -1322,29 +1322,29 @@ class SchedeValutazioneWindow(QWidget):
 
                     if hasattr(tab, "lines") and "lines" in scheda and tab.lines is not None:
                         for line, value in zip(tab.lines, scheda["lines"]):
-                            print(f"DEBUG: set line {value} in tab {scheda['nome']}")
+                            #print(f"DEBUG: set line {value} in tab {scheda['nome']}")
                             line.setText(value)
                     # <<<<<<<<<<<<<<<< AGGIUNTA PER BOX DESCRIZIONE
                     if hasattr(tab, "descrizioni") and "descrizioni" in scheda and tab.descrizioni is not None:
                         for key, value in scheda["descrizioni"].items():
                             if key in tab.descrizioni:
-                                print(f"DEBUG: set descrizione {value} per {key} in tab {scheda['nome']}")
+                                #print(f"DEBUG: set descrizione {value} per {key} in tab {scheda['nome']}")
                                 tab.descrizioni[key].setText(value)
                     # <<<<<<<<<<<<<<<< FINE AGGIUNTA
                     if hasattr(tab, "note") and "note" in scheda and tab.note is not None:
-                        print(f"DEBUG: set note in tab {scheda['nome']}")
+                        #print(f"DEBUG: set note in tab {scheda['nome']}")
                         tab.note.setPlainText(scheda["note"])
                     if hasattr(tab, "diagnosi_edit") and "diagnosi" in scheda:
-                        print(f"DEBUG: set diagnosi in tab {scheda['nome']}")
+                        #print(f"DEBUG: set diagnosi in tab {scheda['nome']}")
                         tab.diagnosi_edit.setPlainText(scheda["diagnosi"])
                     if getattr(tab, "le_nota", None) is not None and "le_nota" in scheda:
-                        print(f"DEBUG: set le_nota in tab {scheda['nome']}")
+                        #print(f"DEBUG: set le_nota in tab {scheda['nome']}")
                         tab.le_nota.setText(scheda["le_nota"])
                     if getattr(tab, "le_conclusioni", None) is not None and "le_conclusioni" in scheda:
-                        print(f"DEBUG: set le_conclusioni in tab {scheda['nome']}")
+                        #print(f"DEBUG: set le_conclusioni in tab {scheda['nome']}")
                         tab.le_conclusioni.setText(scheda["le_conclusioni"])
                     if getattr(tab, "punteggio_totale_label", None) is not None and "punteggio" in scheda:
-                        print(f"DEBUG: set punteggio in tab {scheda['nome']}")
+                        #print(f"DEBUG: set punteggio in tab {scheda['nome']}")
                         tab.punteggio_totale_label.setText(scheda["punteggio"])
                 # 🔹 Ricarica la firma del logopedista (se presente)
         self.firma_line.setText(valutazione.get("firma", ""))
@@ -2554,7 +2554,7 @@ class SchedeValutazioneWindow(QWidget):
 
                 rules = json.load(f)
                 rules = rules.get("indici_rules", rules) 
-                print("DEBUG RULES KEYS:", list(rules.keys()))  # 👈 AGGIUNGI QUESTA
+                #print("DEBUG RULES KEYS:", list(rules.keys()))  # 👈 AGGIUNGI QUESTA
         except Exception as e:
             QMessageBox.critical(self, "Errore", f"Impossibile caricare le regole degli indici critici:\n{e}")
             return
@@ -2573,7 +2573,7 @@ class SchedeValutazioneWindow(QWidget):
         # funzione che valuta criticità in base al JSON
         # Copia questa funzione DENTRO crea_report_indici
         def estrai_critici(valutazione, rules):
-            print("DEBUG CHECK valori rules:", [(k, list(v.keys())[:3]) for k, v in list(rules.items())[:2]])
+            #print("DEBUG CHECK valori rules:", [(k, list(v.keys())[:3]) for k, v in list(rules.items())[:2]])
 
 
     # === 1) Mappe tab/etichette ===
@@ -3014,12 +3014,12 @@ class SchedeValutazioneWindow(QWidget):
                                     "messaggio": regola.get("messaggio", val_descr or val_clean),
                                 })
                             break
-                print("DEBUG TEST ─ SCHEDE PRESENTI NELLA VALUTAZIONE:")
+                #print("DEBUG TEST ─ SCHEDE PRESENTI NELLA VALUTAZIONE:")
 
                 for s in valutazione.get("schede", []):
                     print(f"  - {s.get('nome')} → {len(s.get('combos', []))} valori, descr: {len(s.get('descrizioni', {})) if 'descrizioni' in s else 'NO'}")
 
-                print("DEBUG CHECK trovati:", trovati)
+                #print("DEBUG CHECK trovati:", trovati)
 
             return trovati
 
@@ -3137,7 +3137,7 @@ class SchedeValutazioneWindow(QWidget):
 
             from collections import defaultdict
 
-            print(f"DEBUG FINALE - Numero critici trovati: {len(critici) if critici else 0}")
+            #print(f"DEBUG FINALE - Numero critici trovati: {len(critici) if critici else 0}")
 
             if critici:
                 sezioni = defaultdict(list)
@@ -3244,7 +3244,7 @@ class SchedeValutazioneWindow(QWidget):
 
 
                     # --- NOTE CONCLUSIVE: solo dopo CONCLUSIONI ---
-                    print("\nDEBUG CHIAVI SEZIONI:", list(sezioni_ordinate.keys()))
+                    #print("\nDEBUG CHIAVI SEZIONI:", list(sezioni_ordinate.keys()))
 
                     if nome_gui == "Conclusioni":
                         note_conclusive = ""
