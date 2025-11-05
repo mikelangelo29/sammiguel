@@ -72,33 +72,36 @@ class SchedeValutazioneWindow(QWidget):
 
         salva_layout = QHBoxLayout()
 
+        salva_layout = QHBoxLayout()
+
         # === Bottoni salvataggio ===
-        self.salva_btn = QPushButton("💾 Salva valutazione")
+        self.salva_btn = QPushButton("Salva valutazione")
         self.salva_btn.setStyleSheet(
-            "font-size:15px; font-weight:bold; background:#43a047; color:white; padding:7px 28px; border-radius:8px;"
+            "font-size:15px; font-weight:bold; background:#43a047; color:white; padding:8px 34px; border-radius:8px;"
         )
         self.salva_btn.clicked.connect(self.salva_valutazione)
 
-        self.salva_chiudi_btn = QPushButton("🟠 Salva e chiudi valutazione")
+        self.salva_chiudi_btn = QPushButton("Salva e chiudi valutazione")
         self.salva_chiudi_btn.setStyleSheet(
-            "font-size:15px; font-weight:bold; background:#ff9800; color:white; padding:7px 28px; border-radius:8px;"
+            "font-size:15px; font-weight:bold; background:#ff9800; color:white; padding:8px 34px; border-radius:8px;"
         )
         self.salva_chiudi_btn.clicked.connect(self.salva_e_chiudi_valutazione)
 
         # === Bottoni report ===
-        self.report_completo_btn = QPushButton("📄 Crea Report completo")
+        self.report_completo_btn = QPushButton("Crea Report completo")
         self.report_completo_btn.setStyleSheet(
-            "font-size:15px; font-weight:bold; background:#1976d2; color:white; padding:7px 28px; border-radius:8px;"
+            "font-size:15px; font-weight:bold; background:#1976d2; color:white; padding:8px 34px; border-radius:8px;"
         )
         self.report_completo_btn.clicked.connect(self.crea_report_completo)
 
-        self.report_indici_btn = QPushButton("⚠️ Report indici critici")
+        self.report_indici_btn = QPushButton("Crea Report indici critici")
         self.report_indici_btn.setStyleSheet(
-            "font-size:15px; font-weight:bold; background:#d32f2f; color:white; padding:7px 28px; border-radius:8px;"
+            "font-size:15px; font-weight:bold; background:#d32f2f; color:white; padding:8px 34px; border-radius:8px;"
         )
         self.report_indici_btn.clicked.connect(self.crea_report_indici)
 
         salva_layout.addStretch()
+
 
         # === Gestione Logo Report ===
         self.logo_label = QLabel("Logo report:")
