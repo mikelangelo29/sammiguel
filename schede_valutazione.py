@@ -1730,16 +1730,48 @@ class SchedeValutazioneWindow(QWidget):
                     y = height - margin
                 return y
 
-# --- LOGO intestazione (se presente e non escluso) ---
+            # --- LOGO intestazione (se presente e non escluso) ---
+            # --- LOGO intestazione (se presente e non escluso) ---
             import os
             logo_path = self.logo_path_line.text().strip()
             nessun_logo = self.no_logo_checkbox.isChecked()
+
             if logo_path and not nessun_logo and os.path.exists(logo_path):
                 try:
-                    c.drawImage(logo_path, margin, y-2*cm, width=(4*cm*2/3), preserveAspectRatio=True, mask='auto')
-                    y -= 2.5 * cm  # Spazio dopo il logo
+                    c.saveState()
+                    # proporzioni fisse e margine superiore costante
+                    logo_width = 2.8 * cm
+                    logo_height = logo_width
+                    logo_x = margin
+                    logo_y = A4[1] - logo_height - 1.2 * cm  # 🔹 1.2 cm dal bordo superiore
+
+                    c.drawImage(
+                        logo_path,
+                        logo_x,
+                        logo_y,
+                        width=logo_width,
+                        height=logo_height,
+                        preserveAspectRatio=True,
+                        mask='auto',
+                        anchor='nw'
+                    )
+                    c.restoreState()
+
+                    # abbassa il punto di scrittura per il testo successivo
+                    y = logo_y - 2.0 * cm
+
                 except Exception as e:
-                    print(f"Errore caricamento logo: {e}")
+                    print(f"Errore caricamento logo (report completo): {e}")
+
+            # 👉 Nessun else necessario: y era già inizializzato in alto (height - margin)
+            #    Se manca il logo, l’intestazione parte già dalla posizione corretta.
+
+            # --- Intestazione ---
+            c.setFont("Helvetica-Bold", 14)
+            if data_nascita:
+                c.drawString(margin, y, f"Report completo - {parent.nome} {parent.cognome} ({data_nascita})")
+            else:
+                c.drawString(margin, y, f"Report completo - {parent.nome} {parent.cognome}")
 
 # intestazione
             c.setFont("Helvetica-Bold", 14)
@@ -3070,15 +3102,43 @@ class SchedeValutazioneWindow(QWidget):
         
 
             # --- LOGO intestazione (facoltativo) ---
+            # --- LOGO intestazione (facoltativo) ---
+            import os
             logo_path = self.logo_path_line.text().strip()
             nessun_logo = self.no_logo_checkbox.isChecked()
+
             if logo_path and not nessun_logo and os.path.exists(logo_path):
                 try:
-                    c.drawImage(logo_path, margin, y - 2 * cm, width=(4 * cm * 2 / 3),
-                                preserveAspectRatio=True, mask='auto')
-                    y -= 2.5 * cm  # Spazio dopo il logo
+                    c.saveState()
+                    logo_width = 2.8 * cm
+                    logo_height = logo_width
+                    logo_x = margin
+                    logo_y = A4[1] - logo_height - 1.2 * cm  # 🔹 stesso margine del completo
+
+                    c.drawImage(
+                        logo_path,
+                        logo_x,
+                        logo_y,
+                        width=logo_width,
+                        height=logo_height,
+                        preserveAspectRatio=True,
+                        mask='auto',
+                        anchor='nw'
+                    )
+                    c.restoreState()
+
+                    y = logo_y - 2.0 * cm  # abbassa per il titolo
+
                 except Exception as e:
-                    print(f"Errore caricamento logo: {e}")
+                    print(f"Errore caricamento logo (report critici): {e}")
+
+            else:
+                # 👇 Necessario nei report critici per garantire posizione del titolo anche senza logo
+                y = A4[1] - 2 * cm
+
+            # --- Intestazione ---
+            c.setFont("Helvetica-Bold", 14)
+            c.drawString(margin, y, f"Report Indici Critici - {parent.nome} {parent.cognome}")
 
             # --- Intestazione ---
             c.setFont("Helvetica-Bold", 14)
