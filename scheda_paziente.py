@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import (
     QGroupBox, QHBoxLayout, QMessageBox
 )
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFont, QIcon
 from schede_valutazione import SchedeValutazioneWindow
 from PyPDF2 import PdfMerger
 # Per PDF multipagina
@@ -267,11 +267,6 @@ class SchedaPazienteWindow(QWidget):
             item.setFont(font_date)
             self.lista_val.addItem(item)
 
-    def aggiorna_lista_valutazioni_completate(self):
-        self.lista_val_comp.clear()
-        font_date = QFont()
-        font_date.setPointSize(12)
-    from PyQt5.QtCore import Qt
 
     def aggiorna_lista_valutazioni_completate(self):
         self.lista_val_comp.clear()
@@ -279,7 +274,7 @@ class SchedaPazienteWindow(QWidget):
         font_date.setPointSize(12)
         for valutazione in self.valutazioni_completate:
             data = valutazione.get("timestamp", "") if isinstance(valutazione, dict) else str(valutazione)
-            item = QListWidgetItem(f"🟢 {data}")
+            item = QListWidgetItem(f"✅ {data}")  # ✅ Valutazioni completate
             item.setFont(font_date)
             self.lista_val_comp.addItem(item)
 
