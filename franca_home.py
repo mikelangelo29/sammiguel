@@ -84,11 +84,9 @@ class HomeFranca(QWidget):
                 "color: green; font-size: 14px; font-weight: bold; margin-top: 10px;"
             )
         else:
-            giorni = licenza.giorni_rimasti()
-            giorni_txt = f"{giorni} giorni rimanenti" if giorni is not None else "Periodo di prova attivo"
-            self.label_versione.setText(f"🟡 Versione demo – {giorni_txt}")
+            self.label_versione.setText("🟡 Versione Demo – periodo di prova attivo")
             self.label_versione.setStyleSheet(
-                "color: orange; font-size: 14px; font-weight: bold; margin-top: 10px;"
+            "color: orange; font-size: 14px; font-weight: bold; margin-top: 10px;"
             )
 
         layout.addWidget(self.label_versione)
