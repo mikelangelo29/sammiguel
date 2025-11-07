@@ -3268,32 +3268,49 @@ class SchedeValutazioneWindow(QWidget):
                     "Conclusioni": "CONCLUSIONI",
                 }
 
+                sezione_in_continua = None
+
                 for nome_gui in ORDINE_SEZIONI:
                     chiave_effettiva = SEZ_MAP.get(nome_gui, nome_gui)
                     items = sezioni_ordinate.get(chiave_effettiva, [])
                     if not items:
                         continue
 
-                    y = check_page_space_indici(c, y, height, margin, needed=2.5 * cm, titolo=nome_gui)
+                    # --- Non disegnare mai un titolo se restano meno di 2.2 cm (≈ 3 righe) ---
+                    if (y - margin) <= 2.2 * cm:
+                        c.showPage()
+                        y = height - margin
+                        sezione_in_continua = None  # reset di sicurezza
 
-                    c.setFont("Helvetica-Bold", 12)
-                    c.drawString(margin, y, nome_gui)
-                    y -= 0.8 * cm
+                    # --- Stacco sobrio sopra ai titoli (solo se non siamo appena saliti di pagina) ---
+                    if y < height - (margin + 3 * cm):
+                        y -= 0.3 * cm
 
+                    # --- Disegna il titolo ---
+                    if sezione_in_continua != nome_gui:
+                        c.setFont("Helvetica-Bold", 12)
+                        c.drawString(margin, y, nome_gui)
+                        y -= 0.6 * cm
+
+
+
+
+                    # --- Ciclo delle voci di sezione ---
                     for item in items:
-                        y = check_page_space_indici(c, y, height, margin, needed=1.2 * cm)
                         campo = item.get("campo", "")
                         messaggio = item.get("messaggio", "")
                         gravita = item.get("gravita", "")
 
+                        # --- Controllo salto pagina ---
                         if y < margin + 2 * cm:
                             c.showPage()
                             y = height - margin
                             c.setFont("Helvetica-Bold", 12)
                             c.drawString(margin, y, f"{nome_gui} (continua)")
-                            y -= 0.8 * cm
+                            y -= 0.7 * cm  # piccolo margine dopo il titolo "continua"
+                            sezione_in_continua = nome_gui  # segna la sezione in corso
 
-                        # --- singola voce ---
+                        # --- Singola voce ---
                         c.setFont("Helvetica-Bold", 10)
                         c.drawString(margin + 1 * cm, y, f"{campo}:")
                         w = c.stringWidth(f"{campo}:", "Helvetica-Bold", 10)
@@ -3303,46 +3320,86 @@ class SchedeValutazioneWindow(QWidget):
                         if gravita:
                             testo_val += f"  (Gravità: {gravita})"
                         c.drawString(margin + 1 * cm + w + 8, y, testo_val)
-                        y -= 0.6 * cm
+                        y -= 0.55 * cm  # compatta leggermente la spaziatura verticale
 
-
-                    # --- NOTE CONCLUSIVE: solo dopo CONCLUSIONI ---
-                    #print("\nDEBUG CHIAVI SEZIONI:", list(sezioni_ordinate.keys()))
-
+                    # --- BLOCCO SPECIALE CONCLUSIONI ---
                     if nome_gui == "Conclusioni":
+                        testo_conclusioni = ""
                         note_conclusive = ""
                         for s in valutazione.get("schede", []):
                             if s.get("nome") == "Conclusioni":
-                                note_conclusive = s.get("note", "").strip()
+                                testo_conclusioni = (s.get("contenuto") or "").strip()
+                                note_conclusive = (s.get("note") or "").strip()
                                 break
 
-                        if note_conclusive:
-                            y -= 0.6 * cm
+                        if not (testo_conclusioni or note_conclusive):
+                            sezione_in_continua = None
+                            continue
 
-                            # Titolo in grassetto
-                            c.setFont("Helvetica-Bold", 10.5)
-                            c.drawString(margin + 1 * cm, y, "NOTE CONCLUSIVE:")
+                        from textwrap import wrap
+                        righe_conc = wrap(testo_conclusioni, 95)
+                        righe_note = wrap(note_conclusive, 95) if note_conclusive else []
+
+                       # --- Corpo delle conclusioni (controllo riga per riga) ---
+                        
+                        c.setFont("Helvetica", 10.5)
+                        for riga in righe_conc:
+                            if y < margin + 1.2 * cm:
+                                c.showPage()
+                                y = height - margin
+                                c.setFont("Helvetica-Bold", 12)
+                                c.drawString(margin, y, "Conclusioni (continua)")
+                                y -= 0.7 * cm
+                                c.setFont("Helvetica", 10.5)
+                                sezione_in_continua = "Conclusioni"
+                            c.drawString(margin, y, riga)
                             y -= 0.5 * cm
 
-                            # Testo normale
+                        # --- NOTE CONCLUSIVE ---
+                        if note_conclusive:
+                            min_space = 0.5 * cm + 0.5 * cm  # titolo + prima riga
+
+                            # Se non c'è spazio, nuova pagina
+                            if y < margin + min_space:
+                                c.showPage()
+                                y = height - margin
+                                c.setFont("Helvetica-Bold", 12)
+                                c.drawString(margin, y, "Conclusioni (continua)")
+                                y -= 0.15 * cm
+                                sezione_in_continua = "Conclusioni"
+                            else:
+                                # stacco visivo equilibrato tra corpo e titolo NOTE
+                                y -= 0.35 * cm
+
+                            # Titolo NOTE CONCLUSIVE
+                            c.setFont("Helvetica-Bold", 10.5)
+                            c.drawString(margin + 1 * cm, y, "NOTE CONCLUSIVE:")
+                            y -= 0.45 * cm  # 👈 leggermente più ampio, più leggibile
+
+                            # Testo note
                             c.setFont("Helvetica", 10.5)
-                            from textwrap import wrap
-                            for riga in wrap(note_conclusive, width=95):
-                                if y < margin + 2 * cm:
+                            for riga in righe_note:
+                                if y < margin + 1.2 * cm:
                                     c.showPage()
                                     y = height - margin
+                                    c.setFont("Helvetica-Bold", 12)
+                                    c.drawString(margin, y, "Conclusioni (continua)")
+                                    y -= 0.7 * cm
                                     c.setFont("Helvetica-Bold", 10.5)
                                     c.drawString(margin + 1 * cm, y, "NOTE CONCLUSIVE:")
-                                    y -= 0.5 * cm
+                                    y -= 0.45 * cm
                                     c.setFont("Helvetica", 10.5)
+                                    sezione_in_continua = "Conclusioni"
                                 c.drawString(margin + 1.3 * cm, y, riga)
                                 y -= 0.5 * cm
 
-                            y -= 0.4 * cm
-                            c.setFont("Helvetica", 9)
+                        y -= 0.25 * cm
+                        c.setFont("Helvetica", 9)
 
 
-                    y -= 0.4 * cm
+
+                    # --- Reset flag sezione ---
+                    sezione_in_continua = None
 
             else:
                 c.setFont("Helvetica", 11)
