@@ -3276,8 +3276,12 @@ class SchedeValutazioneWindow(QWidget):
                     if not items:
                         continue
 
-                    # --- Non disegnare mai un titolo se restano meno di 2.2 cm (≈ 3 righe) ---
-                    if (y - margin) <= 2.2 * cm:
+                    # --- ⚠️ Evita di lasciare un titolo solo a fine pagina ---
+                    # Se dopo il titolo non ci sarebbe spazio per almeno due righe di contenuto,
+                    # anticipa il salto pagina.
+                    spazio_titolo = 1.2 * cm       # altezza stimata del titolo
+                    spazio_due_righe = 1.6 * cm    # spazio necessario per almeno due righe dopo il titolo
+                    if (y - margin) < (spazio_titolo + spazio_due_righe):
                         c.showPage()
                         y = height - margin
                         sezione_in_continua = None  # reset di sicurezza
@@ -3291,9 +3295,6 @@ class SchedeValutazioneWindow(QWidget):
                         c.setFont("Helvetica-Bold", 12)
                         c.drawString(margin, y, nome_gui)
                         y -= 0.6 * cm
-
-
-
 
                     # --- Ciclo delle voci di sezione ---
                     for item in items:
