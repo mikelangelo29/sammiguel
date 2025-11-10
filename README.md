@@ -4,10 +4,6 @@
 
 # 🧠 Franca Dys – Software di Valutazione Logopedica Offline
 
-
-
-# 🧠 Franca Dys – Software di Valutazione Logopedica Offline
-
 **Franca Dys** è un software professionale per la gestione e la documentazione delle valutazioni logopediche, con particolare riferimento ai disturbi della deglutizione (*disfagia*).  
 Il programma opera **completamente offline**, garantendo sicurezza e riservatezza dei dati clinici.
 
