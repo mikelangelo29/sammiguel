@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="logo.png" alt="Franca Dys Logo" width="180">
+  <img src="logo_franca.png" alt="Franca Dys Logo" width="180">
 </p>
 
 # 🧠 Franca Dys – Software di Valutazione Logopedica Offline
